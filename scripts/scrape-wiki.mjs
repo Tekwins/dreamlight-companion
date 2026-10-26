@@ -134,6 +134,18 @@ async function findImageUrl(name) {
   return null;
 }
 
+// Enregistre l'image pointée par `url` sous public/img/<name>, en vérifiant que c'est
+// bien une image (un CDN protégé peut répondre 200 avec une page de vérification HTML).
+async function saveImage(url, name) {
+  const out = path.join('public/img', name.replace(/ /g, '_'));
+  const res = await fetch(url, { headers: { 'User-Agent': UA } });
+  if (!res.ok) return 'HTTP ' + res.status;
+  const type = res.headers.get('content-type') || '';
+  if (!type.startsWith('image/')) return 'pas une image (protection anti-robot ?)';
+  await writeFile(out, Buffer.from(await res.arrayBuffer()));
+  return 'ok';
+}
+
 async function fetchImages() {
   await mkdir('public/img', { recursive: true });
   const files = await referencedImages();
@@ -144,17 +156,76 @@ async function fetchImages() {
     try {
       const url = await findImageUrl(name);
       if (!url) { console.warn('  ?? introuvable', name); continue; }
-      const res = await fetch(url, { headers: { 'User-Agent': UA } });
-      const type = res.headers.get('content-type') || '';
-      // Les CDN protégés (Cloudflare) peuvent répondre 200 avec une page de vérification HTML
-      // au lieu de l'image : on vérifie le type réel avant d'écrire le fichier.
-      if (!type.startsWith('image/')) { console.warn('  ?? pas une image (protection anti-robot ?)', name); continue; }
-      await writeFile(out, Buffer.from(await res.arrayBuffer()));
-      console.log('  ok', name);
+      const result = await saveImage(url, name);
+      if (result === 'ok') console.log('  ok', name);
+      else console.warn('  ??', name, '-', result);
     } catch (e) {
       console.warn('  !!', name, '-', e.message);
     }
     await sleep(250);
+  }
+
+  await fetchImagesFromMdv();
+}
+
+// Repli pour les recettes/habitants encore sans image : mydreamlightvalley.com/fr héberge
+// ses propres images (pas sur l'infrastructure Fandom bloquée par Cloudflare), associées à
+// une page par nom français (ex. /fr/meal/ajiaco, /fr/character/aladdin).
+const MDV = 'https://www.mydreamlightvalley.com';
+
+function normName(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+async function mdvSlugs(category) {
+  const res = await fetch(MDV + '/fr_sitemap.xml', { headers: { 'User-Agent': UA } });
+  const xml = await res.text();
+  const re = new RegExp('<loc>(' + MDV.replace(/[.]/g, '\\.') + '/fr/' + category + '/[a-z0-9-]+)</loc>', 'g');
+  return [...new Set([...xml.matchAll(re)].map((m) => m[1].split('/').pop()))];
+}
+
+// Table nom français normalisé -> URL d'image, pour une catégorie mydreamlightvalley.com (meal/character).
+async function mdvNameMap(category) {
+  const slugs = await mdvSlugs(category);
+  const map = {};
+  for (const slug of slugs) {
+    try {
+      const res = await fetch(`${MDV}/fr/${category}/${slug}`, { headers: { 'User-Agent': UA } });
+      const html = await res.text();
+      const titleM = html.match(/<title>([^<]*)<\/title>/);
+      const imgM = html.match(/src="(\/images\/(?:meals|characters)\/[^"]+\.png[^"]*)"/);
+      const name = titleM?.[1]?.replace(/ - My Dreamlight Valley$/, '').replace(/^(Détail|Personnage): /, '').trim();
+      if (name && imgM) map[normName(name)] = MDV + imgM[1];
+    } catch { /* page suivante */ }
+    await sleep(120);
+  }
+  return map;
+}
+
+async function fetchImagesFromMdv() {
+  const recipesMod = await import('../src/data/recipes.js');
+  const villagersMod = await import('../src/data/villagers.js');
+  const targets = [
+    { items: recipesMod.RECIPES, category: 'meal' },
+    { items: villagersMod.VILLAGERS, category: 'character' }
+  ];
+  for (const { items, category } of targets) {
+    const missing = items.filter((it) => !existsSync(path.join('public/img', it.file.replace(/ /g, '_'))));
+    if (!missing.length) continue;
+    console.log(missing.length, category === 'meal' ? 'recettes' : 'habitants', 'encore sans image, on essaie mydreamlightvalley.com');
+    const map = await mdvNameMap(category);
+    for (const it of missing) {
+      const url = map[normName(it.name)];
+      if (!url) continue;
+      try {
+        const result = await saveImage(url, it.file);
+        if (result === 'ok') console.log('  ok (mdv)', it.file);
+        else console.warn('  ?? (mdv)', it.file, '-', result);
+      } catch (e) {
+        console.warn('  !! (mdv)', it.file, '-', e.message);
+      }
+      await sleep(120);
+    }
   }
 }
 
