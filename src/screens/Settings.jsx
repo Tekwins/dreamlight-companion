@@ -1,6 +1,7 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { useStore, signOut, exportState, importState, pull } from '../lib/store.js';
 import { sendMagicLink } from '../lib/supabase.js';
+import { enablePush, disablePush, pushDeviceStatus, pushSupported } from '../lib/push.js';
 import { EXTENSIONS } from '../data/biomes.js';
 import { VARIANT } from '../data/critters.js';
 import { Icon, Switch, Back, Thumb } from '../ui.jsx';
@@ -100,7 +101,7 @@ export function Settings() {
               onInput={(e) => update((s) => ({ reminders: { ...s.reminders, time: e.currentTarget.value } }))} />
           </label>
         </div>
-        <div class="small muted">Les notifications quand l'appli est fermée viendront dans une prochaine version.</div>
+        <PushSection session={session} />
       </section>
 
       <WatchedAnimals />
@@ -127,6 +128,49 @@ export function Settings() {
       </section>
 
       <div class="small muted" style={{ textAlign: 'center' }}>Données : Dreamlight Valley Wiki et wiki Fandom. Appli non officielle, usage personnel.</div>
+    </div>
+  );
+}
+
+// Active/désactive le rappel quotidien groupé sur CET appareil. Exige un compte connecté :
+// la fonction qui envoie les rappels doit pouvoir lire la progression (récoltes, amitié…).
+function PushSection({ session }) {
+  const [status, setStatus] = useState('checking');
+  const [err, setErr] = useState('');
+
+  useEffect(() => { pushDeviceStatus().then(setStatus); }, []);
+
+  if (!pushSupported()) return <div class="small muted">Notifications non prises en charge par ce navigateur.</div>;
+  if (!session) return <div class="small muted">Connecte-toi pour activer les notifications : elles ont besoin de ta progression synchronisée.</div>;
+
+  const toggle = async (on) => {
+    setErr('');
+    try {
+      if (on) { await enablePush(session.user.id); setStatus('enabled'); }
+      else { await disablePush(); setStatus('disabled'); }
+    } catch (e) {
+      setErr(e.message || 'Impossible d’activer les notifications.');
+      setStatus(await pushDeviceStatus());
+    }
+  };
+
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+  return (
+    <div class="stack" style={{ gap: '6px' }}>
+      <div class="list-row">
+        <div class="stack" style={{ gap: '2px', flex: 1 }}>
+          <strong>Notifications sur cet appareil</strong>
+          <span class="small muted">Un rappel groupé, à l'heure choisie ci-dessus.</span>
+        </div>
+        <Switch on={status === 'enabled'} label="Notifications" onChange={toggle} />
+      </div>
+      {isIOS && !standalone && (
+        <span class="small muted">Sur iPhone : ajoute d'abord l'appli à l'écran d'accueil (icône de partage ▸ « Sur l'écran d'accueil »), puis reviens ici.</span>
+      )}
+      {status === 'denied' && <span class="small" style={{ color: 'var(--warn)' }}>Notifications bloquées dans les réglages du navigateur/téléphone.</span>}
+      {err && <span class="small" style={{ color: 'var(--warn)' }}>{err}</span>}
     </div>
   );
 }
