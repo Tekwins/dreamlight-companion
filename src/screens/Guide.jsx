@@ -58,13 +58,15 @@ function Achievements() {
 }
 
 // Quêtes regroupées : principales, puis d'amitié par habitant (avec son portrait), puis autres
-// (royaume, quotidiennes, événements…). Étapes et récompenses pas encore reprises.
+// (royaume, quotidiennes, événements…). Repliées par défaut ; un clic déplie description/étapes/récompense.
 function Quests() {
   const { state, update } = useStore();
   const done = state.quests;
   const [q, setQ] = useState('');
+  const [open, setOpen] = useState({});
   const count = QUESTS.filter((x) => done[x.id]).length;
   const toggle = (id) => update((s) => ({ quests: { ...s.quests, [id]: !s.quests[id] } }));
+  const toggleOpen = (id) => setOpen((o) => ({ ...o, [id]: !o[id] }));
   const list = q
     ? QUESTS.filter((x) => norm(`${x.name} ${x.villagerName || ''}`).includes(norm(q)))
     : QUESTS;
@@ -75,13 +77,26 @@ function Quests() {
   const villagerIds = [...new Set(friendship.map((x) => x.villagerId))]
     .sort((a, b) => (VILLAGER[a]?.name || '').localeCompare(VILLAGER[b]?.name || '', 'fr'));
 
-  const Row = (x) => (
-    <div key={x.id} class="list-row">
-      <input type="checkbox" checked={!!done[x.id]} aria-label={x.name} style={{ width: '20px', height: '20px', accentColor: 'var(--accent)', flex: 'none' }}
-        onChange={() => toggle(x.id)} />
-      <span style={{ flex: 1, fontWeight: 700, textDecoration: done[x.id] ? 'line-through' : 'none' }}>{x.name}</span>
-    </div>
-  );
+  const Row = (x) => {
+    const hasDetail = !!(x.description || x.steps?.length || x.rewards);
+    const isOpen = hasDetail && open[x.id];
+    return (
+      <div key={x.id} class="stack" style={{ gap: 0 }}>
+        <div class="list-row">
+          <input type="checkbox" checked={!!done[x.id]} aria-label={x.name} style={{ width: '20px', height: '20px', accentColor: 'var(--accent)', flex: 'none' }}
+            onChange={() => toggle(x.id)} />
+          <button type="button" onClick={() => hasDetail && toggleOpen(x.id)}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', padding: 0, textAlign: 'left', font: 'inherit', color: 'inherit', cursor: hasDetail ? 'pointer' : 'default' }}>
+            <span style={{ flex: 1, fontWeight: 700, textDecoration: done[x.id] ? 'line-through' : 'none' }}>{x.name}</span>
+            {hasDetail && (
+              <Icon name="chevron" size={16} style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform .15s', color: 'var(--muted)', flex: 'none' }} />
+            )}
+          </button>
+        </div>
+        {isOpen && <QuestDetail x={x} />}
+      </div>
+    );
+  };
 
   return (
     <div class="stack" style={{ gap: '14px' }}>
@@ -126,6 +141,32 @@ function Quests() {
           <div class="card list-rows" style={{ padding: '2px 16px' }}>{other.map(Row)}</div>
         </section>
       )}
+    </div>
+  );
+}
+
+// Détail déplié d'une quête : résumé, étapes (avec leurs détails) et récompense.
+function QuestDetail({ x }) {
+  return (
+    <div class="stack" style={{ gap: '10px', padding: '2px 0 16px 32px' }}>
+      {x.description && <p class="small muted" style={{ margin: 0, lineHeight: 1.5 }}>{x.description}</p>}
+      {!!x.steps?.length && (
+        <ol class="stack" style={{ gap: '6px', margin: 0, paddingLeft: '18px' }}>
+          {x.steps.map((s, i) => (
+            <li key={i} style={{ fontSize: '14px', lineHeight: 1.4 }}>
+              {s.text}
+              {!!s.subs.length && (
+                <ul style={{ margin: '4px 0 0', paddingLeft: '18px' }}>
+                  {s.subs.map((sub, j) => (
+                    <li key={j} class="small muted" style={{ lineHeight: 1.4 }}>{sub}</li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+      {x.rewards && <span class="small" style={{ fontWeight: 800, color: 'var(--accent)' }}>Récompense : {x.rewards}</span>}
     </div>
   );
 }

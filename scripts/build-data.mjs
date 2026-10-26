@@ -287,6 +287,64 @@ async function writeStarPath(paths) {
 // pour les quêtes d'amitié, l'image de l'habitant concerné : ça suffit à les regrouper sans
 // avoir à corréler avec le wiki anglais. Les pages de Catégorie:Quêtes sans cette fiche (179 sur
 // 658) sont en fait des objets (récompenses) mal catégorisés sur le wiki : on les ignore.
+// ==Objectifs== est une liste wiki : '#' = étape, '#*' = détail (quantité d'ingrédient, astuce…).
+function parseSteps(wt) {
+  // Le wiki écrit tantôt "==Objectifs==", tantôt "== Objectifs ==" (espaces variables).
+  const m = wt.match(/==\s*Objectifs\s*==\n([\s\S]*?)(?:\n==|$)/);
+  if (!m) return [];
+  const steps = [];
+  for (const line of m[1].split('\n')) {
+    if (/^#\*/.test(line)) {
+      // [[]] : lien vide laissé par le wiki (ingrédient/récompense non renseigné).
+      const text = cleanWikitext(line.replace(/^#\*+/, '')).replace(/^\[\[\]\]$/, '').trim();
+      if (text && steps.length) steps[steps.length - 1].subs.push(text);
+    } else if (/^#/.test(line)) {
+      const text = cleanWikitext(line.replace(/^#+/, '')).replace(/^\[\[\]\]$/, '').trim();
+      if (text) steps.push({ text, subs: [] });
+    }
+  }
+  return steps;
+}
+
+// Valeur d'un champ d'infobox, en suivant la profondeur des gabarits {{...}} pour ne pas
+// s'arrêter sur un '|' interne (ex. autre={{Pic 20P|Alpes enchantées}} [[Voie des souhaits]]).
+function infoboxField(wt, field) {
+  const start = wt.indexOf(field + '=');
+  if (start === -1) return null;
+  let i = start + field.length + 1;
+  let depth = 0;
+  let out = '';
+  while (i < wt.length) {
+    if (wt[i] === '{' && wt[i + 1] === '{') { depth++; out += '{{'; i += 2; continue; }
+    if (wt[i] === '}' && wt[i + 1] === '}') {
+      if (depth === 0) break;
+      depth--; out += '}}'; i += 2; continue;
+    }
+    if (depth === 0 && (wt[i] === '|' || wt[i] === '\n')) break;
+    out += wt[i]; i++;
+  }
+  return out;
+}
+
+// La ligne "'''Récompenses :'''" du corps est bien plus souvent présente que les champs de
+// l'infobox (393 pages sur 479) : on la préfère, avec l'infobox en repli.
+function parseRewards(wt) {
+  // {{Pièce}} est le seul gabarit qui porte une info (l'unité) au lieu d'être pure déco.
+  const piece = (s) => s.replace(/\{\{Pièce\}\}/g, 'pièces');
+  // Un lien vide [[]] trahit un champ de récompense laissé incomplet sur le wiki.
+  const dropEmpty = (s) => s.replace(/\s*\+?\s*\[\[\]\]/g, '').trim();
+  // La récompense tient parfois sur la même ligne, parfois en liste à puces "*…" (une par ligne).
+  const body = wt.match(/'''Récompenses\s*:'''\s*\n?([\s\S]*?)(?:\n\s*\n|\n==|$)/);
+  if (body) {
+    const lines = body[1].split('\n').map((l) => l.replace(/^\*+\s*/, '').trim()).filter(Boolean);
+    return lines.map((l) => dropEmpty(cleanWikitext(piece(l)))).filter(Boolean).join(' + ');
+  }
+  const xp = infoboxField(wt, 'expérience');
+  const autre = infoboxField(wt, 'autre');
+  const parts = [xp && cleanWikitext(xp) + ' pts', autre && dropEmpty(cleanWikitext(piece(autre)))].filter(Boolean);
+  return parts.join(' + ');
+}
+
 async function parseQuests(villagers) {
   const villagerByFile = Object.fromEntries(villagers.map((v) => [v.file, v]));
   const files = (await readdir(RAW)).filter((f) => !f.startsWith('_'));
@@ -302,7 +360,13 @@ async function parseQuests(villagers) {
     let kind = 'other';
     if (type.startsWith('Histoire')) kind = 'story';
     else if (type.startsWith('Amitié') && villager) kind = 'friendship';
-    quests.push({ name: raw.title, kind, villagerId: villager?.id, villagerName: villager?.name });
+    // Description : les paragraphes en italique entre la fiche et ==Objectifs==.
+    const introM = wt.match(/\}\}\n+([\s\S]*?)\n==\s*Objectifs\s*==/);
+    const description = introM ? cleanWikitext(introM[1]).slice(0, 600) : '';
+    quests.push({
+      name: raw.title, kind, villagerId: villager?.id, villagerName: villager?.name,
+      description, steps: parseSteps(wt), rewards: parseRewards(wt)
+    });
   }
   return quests;
 }
@@ -315,11 +379,15 @@ async function writeQuests(quests) {
   const lines = [];
   lines.push('// Quêtes, générées depuis le wiki Fandom francophone (Catégorie:Quêtes).');
   lines.push("// kind : 'story' (quête principale), 'friendship' (quête d'habitant, avec villagerId/villagerName) ou 'other'");
-  lines.push('// (royaume, quotidienne, événement, lot de rêve…). Étapes et récompenses pas encore reprises.');
+  lines.push('// (royaume, quotidienne, événement, lot de rêve…). steps : étapes (et leurs détails en sub-liste).');
   lines.push('export const QUESTS = [');
   for (const q of quests) {
-    const extra = q.kind === 'friendship' ? `, villagerId: '${q.villagerId}', villagerName: '${q.villagerName.replace(/'/g, "\\'")}'` : '';
-    lines.push(`  { id: 'quest-${slug(q.name)}', name: '${q.name.replace(/'/g, "\\'")}', kind: '${q.kind}'${extra} },`);
+    const entry = { id: 'quest-' + slug(q.name), name: q.name, kind: q.kind };
+    if (q.kind === 'friendship') { entry.villagerId = q.villagerId; entry.villagerName = q.villagerName; }
+    if (q.description) entry.description = q.description;
+    if (q.steps.length) entry.steps = q.steps;
+    if (q.rewards) entry.rewards = q.rewards;
+    lines.push('  ' + JSON.stringify(entry) + ',');
   }
   lines.push('];');
   lines.push('');
