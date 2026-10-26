@@ -39,7 +39,7 @@ function screenFor(route) {
     case 'recettes': return <Recipes selectedId={second} />;
     case 'garde-manger': return <Pantry />;
     case 'courses': return <Shopping />;
-    case 'amitie': return <Friends />;
+    case 'amitie': return <Friends selectedId={second} />;
     case 'guide': return <Guide />;
     case 'recherche': return <Recherche />;
     case 'collection': return <Collection />;

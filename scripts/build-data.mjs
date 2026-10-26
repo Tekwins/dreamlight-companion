@@ -17,10 +17,14 @@ function slug(name) {
   return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-// Catégories d'extension telles que taguées en fin de page sur le wiki FR.
+// Catégories d'extension telles que taguées en fin de page sur le wiki FR. Quelques pages ont des
+// coquilles (ex. « The Storybook Valey », « A Rift in Time » sans le suffixe) : on les reconnaît
+// aussi, plutôt que de laisser l'habitant/la quête retomber à tort en "jeu de base".
 const EXT_CAT = {
   "A Rift in Time (Île de l'Éternité)": 'rift',
+  'A Rift in Time': 'rift',
   'The Storybook Vale': 'vale',
+  'The Storybook Valey': 'vale',
   'Wishblossom Ranch': 'ranch',
   'Honeyglow Woods': 'honeyglow'
 };
@@ -178,6 +182,39 @@ const VILLAGER_FILE_OVERRIDE = { "L'Oublié": "L'Oublié.png" };
 // que le wiki FR les retague.
 const VILLAGER_EXT_OVERRIDE = { Jafar: 'rift', Gaston: 'rift', EVE: 'rift', Raiponce: 'rift' };
 
+// Nom tel qu'utilisé en jeu, quand il diffère du titre de la page wiki. Tek confirme en jeu.
+const VILLAGER_NAME_OVERRIDE = { 'Marraine la Fée': 'La bonne fée' };
+
+// Catégories à ignorer pour déterminer l'univers Disney/Pixar d'un habitant (ne sont ni
+// l'extension ni l'univers : juste des rangements wiki).
+const UNIVERSE_SKIP = new Set(['Personnages', 'Jeu de base', ...Object.keys(EXT_CAT)]);
+
+function parseUniverse(cats) {
+  const rest = cats.filter((c) => !UNIVERSE_SKIP.has(c));
+  // La dernière catégorie restante est la bonne quand il y en a plusieurs (une catégorie portant
+  // le nom même de l'habitant précède parfois son vrai univers, ex. Maléfique -> La Belle au bois dormant).
+  return rest.length ? rest[rest.length - 1] : null;
+}
+
+// ==Parcours de récompenses== : un tableau wiki Niveau/Image/Nom/Typologie, une ligne par palier
+// d'amitié débloqué.
+function parseVillagerRewards(wt) {
+  const sec = wt.match(/==\s*Parcours de récompenses\s*==\n([\s\S]*?)\n\|\}/);
+  if (!sec) return [];
+  const blocks = sec[1].split(/\n\|-[^\n]*\n/).map((b) => b.trim()).filter((b) => /Amitié\s*\d+/.test(b));
+  const rewards = [];
+  for (const block of blocks) {
+    const lines = block.split('\n').filter((l) => l.startsWith('|'));
+    const lvlM = lines[0]?.match(/Amitié\s*(\d+)/);
+    if (!lvlM || lines.length < 4) continue;
+    const name = cleanWikitext(lines[2].replace(/^\|/, '')).replace(/\*+$/, '').trim();
+    const type = cleanWikitext(lines[3].replace(/^\|/, '')).trim();
+    if (!name) continue; // ligne laissée vide sur le wiki (contenu pas encore documenté)
+    rewards.push({ level: +lvlM[1], name, type });
+  }
+  return rewards;
+}
+
 async function parsePersonnages() {
   const files = (await readdir(RAW)).filter((f) => !f.startsWith('_'));
   const villagers = [];
@@ -192,11 +229,16 @@ async function parsePersonnages() {
     const cats = [...wt.matchAll(/\[\[Catégorie:([^\]]+)\]\]/g)].map((m) => m[1]);
     let ext = null;
     for (const c of cats) if (EXT_CAT[c]) ext = EXT_CAT[c];
-    const name = raw.title;
-    ext = VILLAGER_EXT_OVERRIDE[name] || ext;
-    const id = OLD_VILLAGER_ID[name] || slug(name);
-    const file = VILLAGER_FILE_OVERRIDE[name] || img[1];
-    villagers.push({ id, name, file, ext });
+    const wikiName = raw.title;
+    ext = VILLAGER_EXT_OVERRIDE[wikiName] || ext;
+    // L'id reste basé sur le titre wiki d'origine, pour ne pas perdre la progression déjà
+    // enregistrée (amitié, favoris…) d'un habitant renommé par VILLAGER_NAME_OVERRIDE.
+    const id = OLD_VILLAGER_ID[wikiName] || slug(wikiName);
+    const name = VILLAGER_NAME_OVERRIDE[wikiName] || wikiName;
+    const file = VILLAGER_FILE_OVERRIDE[wikiName] || img[1];
+    const universe = parseUniverse(cats);
+    const rewards = parseVillagerRewards(wt);
+    villagers.push({ id, name, file, ext, universe, rewards });
   }
   return villagers.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
 }
@@ -204,12 +246,17 @@ async function parsePersonnages() {
 async function writeVillagers(villagers) {
   const lines = [];
   lines.push('// Habitants, générés depuis le wiki Fandom francophone (Catégorie:Personnages).');
-  lines.push('// ext : extension requise.');
+  lines.push("// ext : extension requise. universe : univers Disney/Pixar d'origine, si identifié.");
+  lines.push('// rewards : récompenses débloquées à chaque palier d\'amitié (niveau, nom, type).');
   lines.push('export const VILLAGERS = [');
   for (const v of villagers) {
-    lines.push(`  ['${v.id}', '${v.name.replace(/'/g, "\\'")}', '${v.file.replace(/'/g, "\\'")}'${v.ext ? `, '${v.ext}'` : ''}],`);
+    const entry = { id: v.id, name: v.name, file: v.file };
+    if (v.ext) entry.ext = v.ext;
+    if (v.universe) entry.universe = v.universe;
+    if (v.rewards.length) entry.rewards = v.rewards;
+    lines.push('  ' + JSON.stringify(entry) + ',');
   }
-  lines.push('].map(([id, name, file, ext]) => ({ id, name, file, ext: ext || null }));');
+  lines.push('].map((v) => ({ ext: null, universe: null, rewards: [], ...v }));');
   lines.push('');
   await writeFile(ROOT + 'src/data/villagers.js', lines.join('\n'));
   console.log('src/data/villagers.js écrit (' + villagers.length + ' habitants).');

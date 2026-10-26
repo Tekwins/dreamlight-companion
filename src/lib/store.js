@@ -15,6 +15,8 @@ export const DEFAULT_STATE = {
   shopping: [],
   plantings: [],
   friendship: {},
+  // Métier perso attribué à un habitant (repère, pas une donnée du jeu) : { [villagerId]: jobId }.
+  villagerJobs: {},
   favorites: {},
   watched: {},
   // Succès obtenus et quêtes faites : simples cases à cocher, par id.
