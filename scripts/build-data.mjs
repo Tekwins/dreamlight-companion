@@ -172,19 +172,28 @@ const OLD_VILLAGER_ID = {
 // on retombe sur le nom de la page pour le fichier image plutôt que cette valeur erronée.
 const VILLAGER_FILE_OVERRIDE = { "L'Oublié": "L'Oublié.png" };
 
+// Ces fiches ne portent pas le tag [[Catégorie:A Rift in Time (Île de l'Éternité)]] (contrairement
+// aux autres habitants de l'extension), mais leurs quêtes d'histoire le portent, tout comme le
+// champ |collection=Eternity Isle du wiki anglais : on corrige à la main plutôt que d'attendre
+// que le wiki FR les retague.
+const VILLAGER_EXT_OVERRIDE = { Jafar: 'rift', Gaston: 'rift', EVE: 'rift', Raiponce: 'rift' };
+
 async function parsePersonnages() {
   const files = (await readdir(RAW)).filter((f) => !f.startsWith('_'));
   const villagers = [];
   for (const f of files) {
     const raw = JSON.parse(await readFile(RAW + '/' + f, 'utf8'));
     const wt = raw.wikitext || '';
-    if (!/\{\{Personnages\|/.test(wt) || raw.title.startsWith('Modèle')) continue;
+    // L'infobox est parfois sur plusieurs lignes ("{{Personnages\n|title1=...") au lieu de
+    // "{{Personnages|title1=..." : les deux formes doivent être reconnues (ex. Hercule, Phil).
+    if (!/\{\{Personnages[|\s]/.test(wt) || raw.title.startsWith('Modèle')) continue;
     const img = wt.match(/image1=([^|\n]+?\.png)/);
     if (!img && !VILLAGER_FILE_OVERRIDE[raw.title]) continue;
     const cats = [...wt.matchAll(/\[\[Catégorie:([^\]]+)\]\]/g)].map((m) => m[1]);
     let ext = null;
     for (const c of cats) if (EXT_CAT[c]) ext = EXT_CAT[c];
     const name = raw.title;
+    ext = VILLAGER_EXT_OVERRIDE[name] || ext;
     const id = OLD_VILLAGER_ID[name] || slug(name);
     const file = VILLAGER_FILE_OVERRIDE[name] || img[1];
     villagers.push({ id, name, file, ext });
