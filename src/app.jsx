@@ -54,6 +54,20 @@ export function App() {
     if (meta) meta.setAttribute('content', state.theme === 'chateau' ? '#F6F4FB' : '#14123A');
   }, [state.theme]);
 
+  // Les rangées .chips n'ont pas de scrollbar visible et le tactile n'existe pas sur PC :
+  // on convertit la molette verticale en défilement horizontal au survol.
+  useEffect(() => {
+    const onWheel = (e) => {
+      if (e.deltaX !== 0) return;
+      const row = e.target.closest?.('.chips');
+      if (!row || row.scrollWidth <= row.clientWidth) return;
+      row.scrollLeft += e.deltaY;
+      e.preventDefault();
+    };
+    document.addEventListener('wheel', onWheel, { passive: false });
+    return () => document.removeEventListener('wheel', onWheel);
+  }, []);
+
   const path = route.path;
   const subActive = (href) => path === href.slice(1) || path.startsWith(href.slice(1) + '/');
 

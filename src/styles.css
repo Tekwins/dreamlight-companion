@@ -102,7 +102,9 @@ h2 { font-size: 19px; font-weight: 700; }
 /* ---------- Composants ---------- */
 .card { background: var(--surface); border-radius: 18px; padding: 14px; }
 .row { display: flex; align-items: center; gap: 12px; }
-.stack { display: flex; flex-direction: column; gap: 8px; }
+/* min-width: 0 : une pile flex ne doit pas forcer sa largeur sur le contenu qu'elle contient
+   (sinon une rangée défilante comme .chips peut déborder sur la colonne voisine). */
+.stack { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .wrap { flex-wrap: wrap; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }

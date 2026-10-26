@@ -60,7 +60,9 @@ export function Home() {
               <h2>Disponibles maintenant</h2>
               <a href="#/animaux" style={{ fontWeight: 800, fontSize: '14px', padding: '8px 0' }}>Tout voir ({critters.length})</a>
             </div>
-            <div class="chips" style={{ gap: '12px' }}>
+            {/* Pas de débordement plein cadre ici : .home-grid est à 2 colonnes sur grand écran,
+                le débordement standard de .chips chevaucherait alors la colonne voisine. */}
+            <div class="chips" style={{ gap: '12px', margin: 0, padding: 0 }}>
               {featured.map(({ v, rare: r, av }) => (
                 <a key={v.id} href={`#/animaux/${v.id}`} class="stack" style={{ alignItems: 'center', width: '78px', flex: 'none', gap: '5px', color: 'var(--text)' }}>
                   <Thumb file={v.file + '.png'} name={v.name} round ring={r ? 'var(--accent)' : av.urgent ? 'var(--warn)' : null} />

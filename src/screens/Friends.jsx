@@ -6,13 +6,14 @@ import { Icon, Thumb } from '../ui.jsx';
 export function Friends() {
   const { state, update } = useStore();
   const today = todayKey();
+  // Niveau 0 par défaut : villageois pas encore rencontré (pas de niveau 1 imposé d'office).
   const list = VILLAGERS.filter((v) => !v.ext || state.extensions[v.ext]).map((v) => {
-    const f = state.friendship[v.id] || { level: 1, talked: null };
-    return { ...v, level: f.level ?? 1, talked: f.talked === today };
+    const f = state.friendship[v.id] || { level: 0, talked: null };
+    return { ...v, level: f.level ?? 0, talked: f.talked === today };
   }).sort((a, b) => (a.talked - b.talked) || a.name.localeCompare(b.name, 'fr'));
 
   const set = (id, patch) => update((s) => ({
-    friendship: { ...s.friendship, [id]: { level: 1, ...(s.friendship[id] || {}), ...patch } }
+    friendship: { ...s.friendship, [id]: { level: 0, ...(s.friendship[id] || {}), ...patch } }
   }));
 
   const talkedCount = list.filter((v) => v.talked).length;
@@ -38,8 +39,10 @@ export function Friends() {
               <div class="between">
                 <span class="name">{v.name}</span>
                 <span class="row" style={{ gap: '4px' }}>
-                  <button class="icon-btn" style={{ width: '32px', height: '32px' }} aria-label={`Baisser le niveau de ${v.name}`} onClick={() => set(v.id, { level: Math.max(1, v.level - 1) })}>−</button>
-                  <span style={{ fontWeight: 900, minWidth: '52px', textAlign: 'center', color: v.level >= 10 ? 'var(--pink)' : 'var(--teal)' }}>Niv. {v.level}</span>
+                  <button class="icon-btn" style={{ width: '32px', height: '32px' }} aria-label={`Baisser le niveau de ${v.name}`} onClick={() => set(v.id, { level: Math.max(0, v.level - 1) })}>−</button>
+                  <span style={{ fontWeight: 900, minWidth: '72px', textAlign: 'center', color: v.level >= 10 ? 'var(--pink)' : v.level === 0 ? 'var(--muted)' : 'var(--teal)' }}>
+                    {v.level === 0 ? 'Non rencontré' : `Niv. ${v.level}`}
+                  </span>
                   <button class="icon-btn" style={{ width: '32px', height: '32px' }} aria-label={`Monter le niveau de ${v.name}`} onClick={() => set(v.id, { level: Math.min(10, v.level + 1) })}>+</button>
                 </span>
               </div>
