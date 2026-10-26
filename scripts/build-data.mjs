@@ -283,22 +283,48 @@ async function writeStarPath(paths) {
   console.log('src/data/starpath.js écrit (' + paths.length + ' voies).');
 }
 
-// Liste minimale (nom seulement) : le détail par quête (récompenses, étapes) demande
-// de scraper chaque page individuellement, pas encore fait (voir _liste_Quêtes.json).
-async function writeQuestsList() {
-  const raw = JSON.parse(await readFile(RAW + '/_liste_Quêtes.json', 'utf8'));
-  const names = raw.titles.filter((t) => !t.startsWith('Modèle')).sort((a, b) => a.localeCompare(b, 'fr'));
+// Chaque page de quête a une fiche {{Quête|...}} avec son type (Histoire/Amitié/Royaume/…) et,
+// pour les quêtes d'amitié, l'image de l'habitant concerné : ça suffit à les regrouper sans
+// avoir à corréler avec le wiki anglais. Les pages de Catégorie:Quêtes sans cette fiche (179 sur
+// 658) sont en fait des objets (récompenses) mal catégorisés sur le wiki : on les ignore.
+async function parseQuests(villagers) {
+  const villagerByFile = Object.fromEntries(villagers.map((v) => [v.file, v]));
+  const files = (await readdir(RAW)).filter((f) => !f.startsWith('_'));
+  const quests = [];
+  for (const f of files) {
+    const raw = JSON.parse(await readFile(RAW + '/' + f, 'utf8'));
+    const wt = raw.wikitext || '';
+    if (!/\{\{Quête\|/.test(wt) || raw.title.startsWith('Modèle')) continue;
+    const typeM = wt.match(/type_de_quête=([^{|\n]+)/);
+    const type = (typeM ? typeM[1] : '').trim();
+    const imgM = wt.match(/image1=([^|\n]+?\.png)/);
+    const villager = imgM ? villagerByFile[imgM[1]] : null;
+    let kind = 'other';
+    if (type.startsWith('Histoire')) kind = 'story';
+    else if (type.startsWith('Amitié') && villager) kind = 'friendship';
+    quests.push({ name: raw.title, kind, villagerId: villager?.id, villagerName: villager?.name });
+  }
+  return quests;
+}
+
+async function writeQuests(quests) {
+  const byName = (a, b) => a.name.localeCompare(b.name, 'fr');
+  const order = { story: 0, friendship: 1, other: 2 };
+  quests.sort((a, b) => order[a.kind] - order[b.kind]
+    || (a.villagerName || '').localeCompare(b.villagerName || '', 'fr') || byName(a, b));
   const lines = [];
-  lines.push('// Liste des quêtes (noms uniquement), générée depuis le wiki Fandom francophone.');
-  lines.push('// Le détail (récompenses, étapes, donneur) demande de scraper chaque page individuellement : pas encore fait.');
+  lines.push('// Quêtes, générées depuis le wiki Fandom francophone (Catégorie:Quêtes).');
+  lines.push("// kind : 'story' (quête principale), 'friendship' (quête d'habitant, avec villagerId/villagerName) ou 'other'");
+  lines.push('// (royaume, quotidienne, événement, lot de rêve…). Étapes et récompenses pas encore reprises.');
   lines.push('export const QUESTS = [');
-  for (const name of names) {
-    lines.push(`  { id: 'quest-${slug(name)}', name: '${name.replace(/'/g, "\\'")}' },`);
+  for (const q of quests) {
+    const extra = q.kind === 'friendship' ? `, villagerId: '${q.villagerId}', villagerName: '${q.villagerName.replace(/'/g, "\\'")}'` : '';
+    lines.push(`  { id: 'quest-${slug(q.name)}', name: '${q.name.replace(/'/g, "\\'")}', kind: '${q.kind}'${extra} },`);
   }
   lines.push('];');
   lines.push('');
   await writeFile(ROOT + 'src/data/quests.js', lines.join('\n'));
-  console.log('src/data/quests.js écrit (' + names.length + ' quêtes, noms seulement).');
+  console.log('src/data/quests.js écrit (' + quests.length + ' quêtes).');
 }
 
 async function main() {
@@ -378,7 +404,9 @@ async function main() {
   console.log('Voies des étoiles extraites :', starPaths.length);
   await writeStarPath(starPaths);
 
-  await writeQuestsList();
+  const quests = await parseQuests(villagers);
+  console.log('Quêtes extraites :', quests.length);
+  await writeQuests(quests);
 }
 
 await main();

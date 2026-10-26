@@ -5,6 +5,7 @@
 // Utilisation (depuis le dossier du projet, Node 18 ou plus) :
 //   npm run data            -> pages brutes dans data/raw/<wiki>/<page>.json
 //   npm run data -- images  -> images dans public/img/ (pour ne plus dépendre du wiki)
+//   npm run data -- quetes  -> relance juste les ~660 pages de quêtes (sans tout retélécharger)
 //
 // Les pages brutes servent ensuite à générer les fichiers de src/data
 // (recettes complètes, habitants, quêtes, succès, Voies des étoiles).
@@ -45,7 +46,9 @@ const TARGETS = [
   { wiki: 'frfandom', page: 'Succès' },
   { wiki: 'frfandom', page: 'Voie des étoiles Élégance spectrale' },
   { wiki: 'frfandom', page: 'Voie des étoiles Aventure maritime' },
-  { wiki: 'frfandom', category: 'Quêtes', listOnly: true }
+  // Chaque page de quête a une fiche avec son type (Histoire/Amitié) et, pour les quêtes
+  // d'amitié, l'image de l'habitant concerné : pas besoin de corréler avec le wiki anglais.
+  { wiki: 'frfandom', category: 'Quêtes' }
 ];
 
 const UA = 'DreamlightCompagnon/0.1 (usage personnel ; contact via GitHub Tekwins)';
@@ -89,8 +92,8 @@ async function saveTitleList(wiki, category, titles) {
   console.log('  ok', wiki, 'liste', category, '(' + titles.length + ')');
 }
 
-async function fetchPages() {
-  for (const t of TARGETS) {
+async function fetchPages(targets = TARGETS) {
+  for (const t of targets) {
     try {
       const titles = t.category ? await categoryPages(t.wiki, t.category) : [t.page];
       if (t.listOnly) { await saveTitleList(t.wiki, t.category, titles); continue; }
@@ -231,4 +234,6 @@ async function fetchImagesFromMdv() {
 
 const mode = process.argv[2];
 if (mode === 'images') await fetchImages();
+// Relance juste les quêtes (657 pages) sans retéléchargement complet : npm run data -- quetes
+else if (mode === 'quetes') await fetchPages(TARGETS.filter((t) => t.category === 'Quêtes'));
 else await fetchPages();

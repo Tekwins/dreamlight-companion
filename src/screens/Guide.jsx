@@ -4,7 +4,11 @@ import { newId } from '../lib/game.js';
 import { ACHIEVEMENTS } from '../data/achievements.js';
 import { STAR_PATHS } from '../data/starpath.js';
 import { QUESTS } from '../data/quests.js';
+import { VILLAGERS } from '../data/villagers.js';
 import { Icon, Seg, Search, Thumb, norm } from '../ui.jsx';
+
+const VILLAGER = Object.fromEntries(VILLAGERS.map((v) => [v.id, v]));
+const KIND_LABEL = { story: 'Quêtes principales', other: 'Autres quêtes' };
 
 export function Guide() {
   const [tab, setTab] = useState('star');
@@ -53,14 +57,31 @@ function Achievements() {
   );
 }
 
-// Liste des quêtes (noms seulement pour l'instant) avec case à cocher et recherche.
+// Quêtes regroupées : principales, puis d'amitié par habitant (avec son portrait), puis autres
+// (royaume, quotidiennes, événements…). Étapes et récompenses pas encore reprises.
 function Quests() {
   const { state, update } = useStore();
   const done = state.quests;
   const [q, setQ] = useState('');
   const count = QUESTS.filter((x) => done[x.id]).length;
   const toggle = (id) => update((s) => ({ quests: { ...s.quests, [id]: !s.quests[id] } }));
-  const list = q ? QUESTS.filter((x) => norm(x.name).includes(norm(q))) : QUESTS;
+  const list = q
+    ? QUESTS.filter((x) => norm(`${x.name} ${x.villagerName || ''}`).includes(norm(q)))
+    : QUESTS;
+
+  const story = list.filter((x) => x.kind === 'story');
+  const other = list.filter((x) => x.kind === 'other');
+  const friendship = list.filter((x) => x.kind === 'friendship');
+  const villagerIds = [...new Set(friendship.map((x) => x.villagerId))]
+    .sort((a, b) => (VILLAGER[a]?.name || '').localeCompare(VILLAGER[b]?.name || '', 'fr'));
+
+  const Row = (x) => (
+    <div key={x.id} class="list-row">
+      <input type="checkbox" checked={!!done[x.id]} aria-label={x.name} style={{ width: '20px', height: '20px', accentColor: 'var(--accent)', flex: 'none' }}
+        onChange={() => toggle(x.id)} />
+      <span style={{ flex: 1, fontWeight: 700, textDecoration: done[x.id] ? 'line-through' : 'none' }}>{x.name}</span>
+    </div>
+  );
 
   return (
     <div class="stack" style={{ gap: '14px' }}>
@@ -68,18 +89,43 @@ function Quests() {
         <h2>Quêtes</h2>
         <span style={{ fontWeight: 800, color: 'var(--accent)' }}>{count} / {QUESTS.length} faites</span>
       </div>
-      <Search value={q} onInput={setQ} placeholder="Chercher une quête…" />
-      <div class="small muted">Liste des noms seulement : les récompenses et étapes de chaque quête arriveront plus tard.</div>
-      <div class="card list-rows" style={{ padding: '2px 16px', maxHeight: '560px', overflowY: 'auto' }}>
-        {list.map((x) => (
-          <div key={x.id} class="list-row">
-            <input type="checkbox" checked={!!done[x.id]} aria-label={x.name} style={{ width: '20px', height: '20px', accentColor: 'var(--accent)', flex: 'none' }}
-              onChange={() => toggle(x.id)} />
-            <span style={{ flex: 1, fontWeight: 700, textDecoration: done[x.id] ? 'line-through' : 'none' }}>{x.name}</span>
+      <Search value={q} onInput={setQ} placeholder="Chercher une quête ou un habitant…" />
+      {!list.length && <div class="empty">Aucune quête ne correspond.</div>}
+
+      {!!story.length && (
+        <section class="stack">
+          <h2>{KIND_LABEL.story}</h2>
+          <div class="card list-rows" style={{ padding: '2px 16px' }}>{story.map(Row)}</div>
+        </section>
+      )}
+
+      {!!villagerIds.length && (
+        <section class="stack">
+          <h2>Quêtes d'habitant</h2>
+          <div class="stack" style={{ gap: '10px' }}>
+            {villagerIds.map((vid) => {
+              const v = VILLAGER[vid];
+              const vQuests = friendship.filter((x) => x.villagerId === vid);
+              return (
+                <div key={vid} class="stack" style={{ gap: '4px' }}>
+                  <div class="row" style={{ gap: '8px' }}>
+                    <Thumb file={v?.file} name={v?.name || '?'} round />
+                    <strong>{v?.name || vid}</strong>
+                  </div>
+                  <div class="card list-rows" style={{ padding: '2px 16px' }}>{vQuests.map(Row)}</div>
+                </div>
+              );
+            })}
           </div>
-        ))}
-        {!list.length && <div class="list-row muted">Aucune quête ne correspond.</div>}
-      </div>
+        </section>
+      )}
+
+      {!!other.length && (
+        <section class="stack">
+          <h2>{KIND_LABEL.other}</h2>
+          <div class="card list-rows" style={{ padding: '2px 16px' }}>{other.map(Row)}</div>
+        </section>
+      )}
     </div>
   );
 }
