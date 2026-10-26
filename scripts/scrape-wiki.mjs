@@ -110,10 +110,14 @@ async function referencedImages() {
   const files = new Set();
   for (const f of await readdir('src/data')) {
     const src = await readFile(path.join('src/data', f), 'utf8');
-    for (const m of src.matchAll(/'([A-Z][A-Za-z' .-]+)'(?=\s*,\s*\[)/g)) files.add(m[1] + '.png'); // fichiers des animaux
-    for (const m of src.matchAll(/\['[^']+', '([A-Z][A-Za-z' .-]+)'/g)) files.add(m[1] + '.png'); // noms anglais des ressources
-    for (const m of src.matchAll(/\['(?:fruit|epice|champi)', '[^']+', '([A-Z][A-Za-z' .-]+)'/g)) files.add(m[1] + '.png'); // cueillette
-    for (const m of src.matchAll(/'([^']+\.png)'/g)) files.add(m[1]); // recettes et habitants (nom de fichier déjà littéral)
+    // critters.js/resources.js : le nom anglais sert de fichier (pas d'extension dans la source).
+    if (f === 'critters.js' || f === 'resources.js') {
+      for (const m of src.matchAll(/'([A-Z][A-Za-z' .-]+)'(?=\s*,\s*\[)/g)) files.add(m[1] + '.png'); // fichiers des animaux
+      for (const m of src.matchAll(/\['[^']+', '([A-Z][A-Za-z' .-]+)'/g)) files.add(m[1] + '.png'); // noms anglais des ressources
+      for (const m of src.matchAll(/\['(?:fruit|epice|champi)', '[^']+', '([A-Z][A-Za-z' .-]+)'/g)) files.add(m[1] + '.png'); // cueillette
+    }
+    // recettes et habitants (nom de fichier déjà littéral ; gère les apostrophes échappées, ex. "Winnie l\'ourson.png")
+    for (const m of src.matchAll(/'((?:[^'\\]|\\.)*\.png)'/g)) files.add(m[1].replace(/\\'/g, "'"));
   }
   return [...files];
 }
@@ -141,6 +145,10 @@ async function fetchImages() {
       const url = await findImageUrl(name);
       if (!url) { console.warn('  ?? introuvable', name); continue; }
       const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      const type = res.headers.get('content-type') || '';
+      // Les CDN protégés (Cloudflare) peuvent répondre 200 avec une page de vérification HTML
+      // au lieu de l'image : on vérifie le type réel avant d'écrire le fichier.
+      if (!type.startsWith('image/')) { console.warn('  ?? pas une image (protection anti-robot ?)', name); continue; }
       await writeFile(out, Buffer.from(await res.arrayBuffer()));
       console.log('  ok', name);
     } catch (e) {

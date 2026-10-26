@@ -37,6 +37,8 @@ export function Icon({ name, size = 22, fill = 'none', ...rest }) {
 }
 
 // ---------- Image du wiki, avec repli sur l'initiale ----------
+// Le wiki Fandom FR (images.wikia.nocookie.net) bloque l'intégration cross-origin (anti-hotlink) :
+// seul le wiki EN (indépendant) peut servir de repli en ligne pour une <img> embarquée.
 export function wikiImage(file) {
   return 'https://dreamlightvalleywiki.com/Special:FilePath/' + encodeURIComponent(file.replace(/ /g, '_'));
 }
