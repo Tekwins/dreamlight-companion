@@ -13,6 +13,7 @@ import { Shopping } from './screens/Shopping.jsx';
 import { Friends } from './screens/Friends.jsx';
 import { Guide } from './screens/Guide.jsx';
 import { Recherche } from './screens/Recherche.jsx';
+import { Collection } from './screens/Collection.jsx';
 import { Settings } from './screens/Settings.jsx';
 
 const TABS = [
@@ -41,6 +42,7 @@ function screenFor(route) {
     case 'amitie': return <Friends />;
     case 'guide': return <Guide />;
     case 'recherche': return <Recherche />;
+    case 'collection': return <Collection />;
     case 'reglages': return <Settings />;
     default: return <Home />;
   }

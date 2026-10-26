@@ -21,7 +21,9 @@ export const DEFAULT_STATE = {
   achievements: {},
   quests: {},
   reminders: { rare: true, harvest: true, star: true, talk: false, time: '20:00' },
-  starPath: { name: '', end: '', duties: [] }
+  starPath: { name: '', end: '', duties: [] },
+  // Récompenses de Voie des étoiles obtenues (Collection), par clé "idVoie:tier:index".
+  starPathRewards: {}
 };
 
 const listeners = new Set();

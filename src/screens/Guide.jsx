@@ -189,6 +189,9 @@ function StarPath() {
 
   return (
     <div class="stack" style={{ gap: '16px' }}>
+      <a href="#/collection" class="btn ghost" style={{ alignSelf: 'flex-start' }}>
+        <Icon name="star" size={18} />Voir ma Collection
+      </a>
       <CurrentStarPaths />
 
       <div class="card stack" style={{ gap: '12px' }}>
