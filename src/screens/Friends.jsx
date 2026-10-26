@@ -7,13 +7,15 @@ import { Icon, Thumb, Seg, Back, ExtTag, GroupTitle } from '../ui.jsx';
 
 const VILLAGER = Object.fromEntries(VILLAGERS.map((v) => [v.id, v]));
 
-// Métiers : juste un repère perso (pas une mécanique du jeu), pour savoir qui s'occupe de quoi.
+// Rôles du jeu (Jardinage/Pêche/Cueillette/Extraction minière/Excavation, assignables à un
+// habitant à partir du niveau d'amitié 2, via un manuel d'entraînement) : l'app ne calcule pas
+// encore les bonus associés, mais retient ici lequel est assigné à qui, pour s'y retrouver.
 const JOBS = [
-  ['potager', 'Potager', 'sprout'],
+  ['jardinage', 'Jardinage', 'sprout'],
   ['peche', 'Pêche', 'fish'],
   ['cueillette', 'Cueillette', 'basket'],
-  ['mines', 'Mines', 'gem'],
-  ['cuisine', 'Cuisine', 'pot']
+  ['extraction', 'Extraction minière', 'gem'],
+  ['excavation', 'Excavation', 'shovel']
 ];
 const JOB = Object.fromEntries(JOBS.map(([id, label, icon]) => [id, { label, icon }]));
 
@@ -37,45 +39,52 @@ export function Friends({ selectedId }) {
 
   const talkedCount = list.filter((v) => v.talked).length;
   const best = list.filter((v) => v.level >= 10).length;
-  const byTalkedThenName = (a, b) => (a.talked - b.talked) || a.name.localeCompare(b.name, 'fr');
+  // Trié par nom seulement : cocher la discussion du jour ne doit pas faire sauter la carte
+  // ailleurs dans la liste (repère visuel sur place plutôt qu'un classement qui bouge).
+  const byName = (a, b) => a.name.localeCompare(b.name, 'fr');
 
   let sections;
   if (group === 'universe') {
     const universes = [...new Set(list.map((v) => v.universe || 'Autres'))]
       .sort((a, b) => (a === 'Autres' ? 1 : b === 'Autres' ? -1 : a.localeCompare(b, 'fr')));
-    sections = universes.map((u) => ({ key: u, title: u, items: list.filter((v) => (v.universe || 'Autres') === u).sort(byTalkedThenName) }));
+    sections = universes.map((u) => ({ key: u, title: u, items: list.filter((v) => (v.universe || 'Autres') === u).sort(byName) }));
   } else {
-    sections = [{ key: 'all', title: null, items: list.slice().sort(byTalkedThenName) }];
+    sections = [{ key: 'all', title: null, items: list.slice().sort(byName) }];
   }
 
-  const FriendCard = (v) => (
-    <div key={v.id} class="item" style={{ alignItems: 'center' }}>
-      <a href={`#/amitie/${v.id}`} aria-label={`Voir la fiche de ${v.name}`}>
-        <Thumb file={v.file} name={v.name} round ring={v.level >= 10 ? 'var(--pink)' : 'var(--teal)'} />
-      </a>
-      <div class="body">
-        <div class="between">
-          <a href={`#/amitie/${v.id}`} class="name" style={{ flex: '1 1 auto', minWidth: 0, color: 'var(--text)' }}>{v.name}</a>
-          <span class="row" style={{ gap: '4px', flex: 'none' }}>
-            <button class="icon-btn" style={{ width: '32px', height: '32px' }} aria-label={`Baisser le niveau de ${v.name}`} onClick={() => set(v.id, { level: Math.max(0, v.level - 1) })}>−</button>
-            <span style={{ fontWeight: 900, minWidth: '72px', textAlign: 'center', color: v.level >= 10 ? 'var(--pink)' : v.level === 0 ? 'var(--muted)' : 'var(--teal)' }}>
-              {v.level === 0 ? 'Non rencontré' : `Niv. ${v.level}`}
+  const FriendCard = (v) => {
+    const job = v.job && JOB[v.job]; // ignore un ancien identifiant de métier qui n'existerait plus
+    return (
+      <div key={v.id} class="item" style={{ alignItems: 'center' }}>
+        <a href={`#/amitie/${v.id}`} aria-label={`Voir la fiche de ${v.name}`} style={{ position: 'relative', flex: 'none' }}>
+          <Thumb file={v.file} name={v.name} round ring={v.level >= 10 ? 'var(--pink)' : 'var(--teal)'} />
+          {job && (
+            <span title={job.label} style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--accent)', color: 'var(--accent-text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={job.icon} size={12} />
             </span>
-            <button class="icon-btn" style={{ width: '32px', height: '32px' }} aria-label={`Monter le niveau de ${v.name}`} onClick={() => set(v.id, { level: Math.min(10, v.level + 1) })}>+</button>
-          </span>
+          )}
+        </a>
+        <div class="body">
+          <div class="between">
+            <a href={`#/amitie/${v.id}`} class="name" style={{ flex: '1 1 auto', minWidth: 0, color: 'var(--text)' }}>{v.name}</a>
+            <span class="row" style={{ gap: '4px', flex: 'none' }}>
+              <button class="icon-btn" style={{ width: '32px', height: '32px' }} aria-label={`Baisser le niveau de ${v.name}`} onClick={() => set(v.id, { level: Math.max(0, v.level - 1) })}>−</button>
+              <span style={{ fontWeight: 900, minWidth: '72px', textAlign: 'center', color: v.level >= 10 ? 'var(--pink)' : v.level === 0 ? 'var(--muted)' : 'var(--teal)' }}>
+                {v.level === 0 ? 'Non rencontré' : `Niv. ${v.level}`}
+              </span>
+              <button class="icon-btn" style={{ width: '32px', height: '32px' }} aria-label={`Monter le niveau de ${v.name}`} onClick={() => set(v.id, { level: Math.min(10, v.level + 1) })}>+</button>
+            </span>
+          </div>
+          <div class="bar"><div style={{ width: `${v.level * 10}%`, background: v.level >= 10 ? 'var(--pink)' : 'var(--teal)' }} /></div>
         </div>
-        <div class="row" style={{ gap: '8px', alignItems: 'center' }}>
-          <div class="bar" style={{ flex: 1 }}><div style={{ width: `${v.level * 10}%`, background: v.level >= 10 ? 'var(--pink)' : 'var(--teal)' }} /></div>
-          {v.job && <span class="tag outline" style={{ flex: 'none' }}><Icon name={JOB[v.job].icon} size={12} />{JOB[v.job].label}</span>}
-        </div>
+        <button class={'icon-btn' + (v.talked ? ' on' : '')} aria-pressed={v.talked} aria-label={v.talked ? `Discussion faite avec ${v.name}` : `Marquer la discussion avec ${v.name}`}
+          style={v.talked ? { border: '2px solid var(--teal)', color: 'var(--teal)' } : {}}
+          onClick={() => set(v.id, { talked: v.talked ? null : today })}>
+          <Icon name="heart" fill={v.talked ? 'currentColor' : 'none'} />
+        </button>
       </div>
-      <button class={'icon-btn' + (v.talked ? ' on' : '')} aria-pressed={v.talked} aria-label={v.talked ? `Discussion faite avec ${v.name}` : `Marquer la discussion avec ${v.name}`}
-        style={v.talked ? { border: '2px solid var(--teal)', color: 'var(--teal)' } : { background: 'var(--accent)', color: 'var(--accent-text)' }}
-        onClick={() => set(v.id, { talked: v.talked ? null : today })}>
-        <Icon name={v.talked ? 'check' : 'heart'} />
-      </button>
-    </div>
-  );
+    );
+  };
 
   const listView = (
     <div class="stack" style={{ gap: '16px' }}>
@@ -153,8 +162,8 @@ function FriendDetail({ v, embedded }) {
       </section>
 
       <section class="stack">
-        <h2>Métier</h2>
-        <div class="small muted">Un repère perso, pour savoir qui s'occupe de quoi (pas une donnée du jeu).</div>
+        <h2>Rôle</h2>
+        <div class="small muted">Celui que tu lui as attribué en jeu (dès le niveau 2, avec un manuel d'entraînement). L'appli ne calcule pas encore les bonus, juste un repère pour s'y retrouver.</div>
         <div class="chips" style={{ margin: 0, padding: 0 }}>
           {JOBS.map(([id, label, icon]) => (
             <button key={id} class={'chip' + (job === id ? ' on' : '')} aria-pressed={job === id} onClick={() => setJob(id)}>

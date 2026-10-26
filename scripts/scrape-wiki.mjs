@@ -54,11 +54,22 @@ const TARGETS = [
 const UA = 'DreamlightCompagnon/0.1 (usage personnel ; contact via GitHub Tekwins)';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function api(wiki, params) {
+// En cas de 429, le wiki indique combien de temps attendre (en-tête retry-after, en secondes) :
+// on patiente ce délai (+marge) puis on réessaie, plutôt que d'abandonner l'objet en cours.
+async function api(wiki, params, tries = 3) {
   const url = WIKIS[wiki].api + '?' + new URLSearchParams({ format: 'json', formatversion: '2', ...params });
-  const res = await fetch(url, { headers: { 'User-Agent': UA } });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} sur ${url}`);
-  return res.json();
+  for (let i = 0; i < tries; i++) {
+    const res = await fetch(url, { headers: { 'User-Agent': UA } });
+    if (res.status === 429) {
+      const wait = (parseInt(res.headers.get('retry-after'), 10) || 300) * 1000 + 5000;
+      console.log(`    (429, attente de ${Math.round(wait / 1000)}s avant de réessayer…)`);
+      await sleep(wait);
+      continue;
+    }
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText} sur ${url}`);
+    return res.json();
+  }
+  throw new Error('429 persistant après plusieurs attentes');
 }
 
 async function categoryPages(wiki, category) {
@@ -113,14 +124,20 @@ async function referencedImages() {
   const files = new Set();
   for (const f of await readdir('src/data')) {
     const src = await readFile(path.join('src/data', f), 'utf8');
-    // critters.js/resources.js : le nom anglais sert de fichier (pas d'extension dans la source).
-    if (f === 'critters.js' || f === 'resources.js') {
-      for (const m of src.matchAll(/'([A-Z][A-Za-z' .-]+)'(?=\s*,\s*\[)/g)) files.add(m[1] + '.png'); // fichiers des animaux
-      for (const m of src.matchAll(/\['[^']+', '([A-Z][A-Za-z' .-]+)'/g)) files.add(m[1] + '.png'); // noms anglais des ressources
-      for (const m of src.matchAll(/\['(?:fruit|epice|champi)', '[^']+', '([A-Z][A-Za-z' .-]+)'/g)) files.add(m[1] + '.png'); // cueillette
+    // critters.js : [id, nom FR, nom EN, horaire] -> le nom anglais (juste avant l'horaire) sert de fichier.
+    if (f === 'critters.js') {
+      for (const m of src.matchAll(/'([A-Z][A-Za-z' .-]+)'(?=\s*,\s*\[)/g)) files.add(m[1] + '.png');
+    }
+    // resources.js : [nom FR, nom EN, ...] (CROPS/FISH/GEMS) ou ['catégorie', nom FR, nom EN, ...] (FORAGE) ;
+    // la négation évite que la 1re regex ne capture à tort le nom FR d'une ligne FORAGE (2e élément).
+    if (f === 'resources.js') {
+      for (const m of src.matchAll(/\[(?!'(?:fruit|epice|champi)')'[^']+', '([A-Z][A-Za-z' .-]+)'/g)) files.add(m[1] + '.png');
+      for (const m of src.matchAll(/\['(?:fruit|epice|champi)', '[^']+', '([A-Z][A-Za-z' .-]+)'/g)) files.add(m[1] + '.png');
     }
     // recettes et habitants (nom de fichier déjà littéral ; gère les apostrophes échappées, ex. "Winnie l\'ourson.png")
     for (const m of src.matchAll(/'((?:[^'\\]|\\.)*\.png)'/g)) files.add(m[1].replace(/\\'/g, "'"));
+    // voies des étoiles, quêtes, habitants (générés en JSON.stringify, donc entre guillemets doubles).
+    for (const m of src.matchAll(/"((?:[^"\\]|\\.)*\.png)"/g)) files.add(m[1].replace(/\\(.)/g, '$1'));
   }
   return [...files];
 }
@@ -139,14 +156,23 @@ async function findImageUrl(name) {
 
 // Enregistre l'image pointée par `url` sous public/img/<name>, en vérifiant que c'est
 // bien une image (un CDN protégé peut répondre 200 avec une page de vérification HTML).
-async function saveImage(url, name) {
+async function saveImage(url, name, tries = 3) {
   const out = path.join('public/img', name.replace(/ /g, '_'));
-  const res = await fetch(url, { headers: { 'User-Agent': UA } });
-  if (!res.ok) return 'HTTP ' + res.status;
-  const type = res.headers.get('content-type') || '';
-  if (!type.startsWith('image/')) return 'pas une image (protection anti-robot ?)';
-  await writeFile(out, Buffer.from(await res.arrayBuffer()));
-  return 'ok';
+  for (let i = 0; i < tries; i++) {
+    const res = await fetch(url, { headers: { 'User-Agent': UA } });
+    if (res.status === 429) {
+      const wait = (parseInt(res.headers.get('retry-after'), 10) || 300) * 1000 + 5000;
+      console.log(`    (429, attente de ${Math.round(wait / 1000)}s avant de réessayer…)`);
+      await sleep(wait);
+      continue;
+    }
+    if (!res.ok) return 'HTTP ' + res.status;
+    const type = res.headers.get('content-type') || '';
+    if (!type.startsWith('image/')) return 'pas une image (protection anti-robot ?)';
+    await writeFile(out, Buffer.from(await res.arrayBuffer()));
+    return 'ok';
+  }
+  return '429 persistant';
 }
 
 async function fetchImages() {
@@ -165,7 +191,7 @@ async function fetchImages() {
     } catch (e) {
       console.warn('  !!', name, '-', e.message);
     }
-    await sleep(250);
+    await sleep(6000); // délai généreux entre chaque image : évite de redéclencher la limite du wiki
   }
 
   await fetchImagesFromMdv();

@@ -103,6 +103,11 @@ export function ResourceScreen({ kind, initialQ }) {
           40 d'énergie par coup de pioche · l'onyx, présent partout, sert au vernis de pioche qui garantit une gemme à chaque coup · les gemmes brillantes valent 4 fois le prix.
         </div>
       )}
+      {kind === 'cueillette' && (
+        <div class="small muted" style={{ lineHeight: 1.45 }}>
+          Fruits, épices et champignons réapparaissent chaque jour à un nouvel endroit du biome (pas de minuteur précis à afficher). Seules les fleurs décoratives ont un vrai délai de réapparition (jusqu'à 2 h selon leur rareté) ; elles ne sont pas encore suivies ici.
+        </div>
+      )}
 
       <Search value={q} onInput={setQ} placeholder={`Chercher un${cfg.unit === 'culture' ? 'e' : ''} ${cfg.unit}…`} />
 
