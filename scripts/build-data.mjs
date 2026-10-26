@@ -140,13 +140,20 @@ function buildPantryGroups(allIngredients) {
     present.forEach((i) => placed.add(i));
     return [title, present];
   });
-  const rest = [...allIngredients].filter((i) => !placed.has(i)).sort((a, b) => a.localeCompare(b, 'fr'));
+  const rest = [...allIngredients].filter((i) => !placed.has(i));
   if (rest.length) groups[groups.length - 1][1] = [...groups[groups.length - 1][1], ...rest];
+  // Ordre alphabétique français réel dans chaque rayon (pas l'ordre de fréquence du wiki anglais).
+  for (const g of groups) g[1].sort((a, b) => a.localeCompare(b, 'fr'));
   return groups;
 }
 
 function jsArray(arr, indent = '  ') {
   return '[' + arr.map((x) => (typeof x === 'string' ? `'${x.replace(/'/g, "\\'")}'` : x)).join(', ') + ']';
+}
+
+// Ordre alphabétique français réel (pas l'ordre de fréquence du wiki anglais).
+function sortedFr(arr) {
+  return [...arr].sort((a, b) => a.localeCompare(b, 'fr'));
 }
 
 // Ids déjà utilisés dans l'ancienne liste d'habitants (progression d'amitié déjà enregistrée
@@ -321,16 +328,16 @@ async function main() {
   lines.push('');
   lines.push("// Catégories : un ingrédient générique est satisfait par n'importe lequel de ces objets.");
   lines.push('export const CATEGORIES = {');
-  lines.push(`  'Légume': ${jsArray(AISLES['Légumes'])},`);
-  lines.push(`  'Céréale': ${jsArray(['Blé', 'Riz', 'Orge', 'Maïs', 'Avoine'])},`);
-  lines.push(`  'Fruit': ${jsArray(AISLES['Fruits'])},`);
-  lines.push(`  'Épice': ${jsArray(AISLES['Épices et herbes'])},`);
-  lines.push(`  'Herbe': ${jsArray(['Basilic', 'Origan', 'Menthe'])},`);
-  lines.push(`  'Poisson': ${jsArray(['Hareng', 'Thon', 'Saumon', 'Morue', 'Bar', 'Carpe', 'Carpe koï', 'Perche', 'Sole', 'Truite arc-en-ciel'])},`);
-  lines.push(`  'Fruits de mer': ${jsArray(['Crevette', 'Homard', 'Crabe', 'Calmar', 'Moule', 'Huître', 'Pétoncle', 'Palourde'])},`);
-  lines.push(`  'Sucrerie': ${jsArray(['Canne à sucre', 'Vanille', 'Fève de cacao', 'Miel doré', 'Gelée sucrée'])},`);
-  lines.push(`  'Protéines': ${jsArray(['Volaille', 'Porc', 'Gibier'])},`);
-  lines.push(`  'Laitages': ${jsArray(['Fromage', 'Lait', 'Beurre', 'Yaourt'])}`);
+  lines.push(`  'Légume': ${jsArray(sortedFr(AISLES['Légumes']))},`);
+  lines.push(`  'Céréale': ${jsArray(sortedFr(['Blé', 'Riz', 'Orge', 'Maïs', 'Avoine']))},`);
+  lines.push(`  'Fruit': ${jsArray(sortedFr(AISLES['Fruits']))},`);
+  lines.push(`  'Épice': ${jsArray(sortedFr(AISLES['Épices et herbes']))},`);
+  lines.push(`  'Herbe': ${jsArray(sortedFr(['Basilic', 'Origan', 'Menthe']))},`);
+  lines.push(`  'Poisson': ${jsArray(sortedFr(['Hareng', 'Thon', 'Saumon', 'Morue', 'Bar', 'Carpe', 'Carpe koï', 'Perche', 'Sole', 'Truite arc-en-ciel']))},`);
+  lines.push(`  'Fruits de mer': ${jsArray(sortedFr(['Crevette', 'Homard', 'Crabe', 'Calmar', 'Moule', 'Huître', 'Pétoncle', 'Palourde']))},`);
+  lines.push(`  'Sucrerie': ${jsArray(sortedFr(['Canne à sucre', 'Vanille', 'Fève de cacao', 'Miel doré', 'Gelée sucrée']))},`);
+  lines.push(`  'Protéines': ${jsArray(sortedFr(['Volaille', 'Porc', 'Gibier']))},`);
+  lines.push(`  'Laitages': ${jsArray(sortedFr(['Fromage', 'Lait', 'Beurre', 'Yaourt']))}`);
   lines.push('};');
   lines.push('');
   lines.push('// Ingrédients proposés dans le garde-manger, par rayon.');
