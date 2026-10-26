@@ -4,7 +4,7 @@
 export const EXTENSIONS = [
   { id: 'rift', name: 'A Rift in Time', short: 'Rift', areas: 'Port antique, Dunes scintillantes, Méandres sauvages' },
   { id: 'vale', name: 'The Storybook Vale', short: 'Vale', areas: 'Reliure, Mythopie, Comté des Contes' },
-  { id: 'ranch', name: 'Wishblossom Ranch', short: 'Ranch', areas: 'Ranch de Florespérance et ses environs' },
+  { id: 'ranch', name: 'Wishblossom Ranch', short: 'Ranch', areas: 'Alpes enchantées, Ravin ravissant, Clairière féerique' },
   // Petit pack d'aventure (Winnie l'ourson, Bourriquet, Porcinet) : pas de nouveau biome confirmé pour l'instant.
   { id: 'honeyglow', name: 'Honeyglow Woods', short: 'Honeyglow', areas: 'Winnie l\'ourson et ses amis' }
 ];
@@ -25,9 +25,10 @@ export const BIOMES = [
   { id: 'mythopie', name: 'Mythopie', color: '#FF9D7A', ext: 'vale' },
   { id: 'comte', name: 'Comté des Contes', color: '#F49AC1', ext: 'vale' },
   { id: 'ranch', name: 'Ranch de Florespérance', color: '#B8E07A', ext: 'ranch' },
-  { id: 'alpes', name: 'Wishing Alps', color: '#A9D8F0', ext: 'ranch', todo: true },
-  { id: 'gulch', name: 'Glamour Gulch', color: '#F7A8C8', ext: 'ranch', todo: true },
-  { id: 'pixie', name: 'Pixie Acres', color: '#E9C2FF', ext: 'ranch', todo: true }
+  // Noms confirmés par l'article d'annonce officiel de Wishblossom Ranch sur le wiki FR
+  { id: 'alpes', name: 'Alpes enchantées', color: '#A9D8F0', ext: 'ranch' },
+  { id: 'gulch', name: 'Ravin ravissant', color: '#F7A8C8', ext: 'ranch' },
+  { id: 'pixie', name: 'Clairière féerique', color: '#E9C2FF', ext: 'ranch' }
 ];
 
 export const BIOME = Object.fromEntries(BIOMES.map((b) => [b.id, b]));
