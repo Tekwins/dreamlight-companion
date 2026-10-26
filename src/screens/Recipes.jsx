@@ -2,10 +2,19 @@ import { useState } from 'preact/hooks';
 import { useStore } from '../lib/store.js';
 import { useDesktop } from '../lib/router.js';
 import { RECIPES, RECIPE_TYPES, ingredientOwned, missingFor } from '../data/recipes.js';
-import { recipeLovers, newId } from '../lib/game.js';
+import { CROPS, FISH, GEMS, FORAGE } from '../data/resources.js';
+import { recipeLovers, newId, biomeName } from '../lib/game.js';
 import { Icon, Thumb, Seg, Search, Back, Stars, ExtTag, norm } from '../ui.jsx';
 
 const RECIPE = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
+
+// D'où vient un ingrédient (seulement pour les ressources à récolter : les plats et produits
+// transformés comme Fromage, Beurre… n'ont pas de « lieu » unique à afficher).
+const INGREDIENT_SOURCE = {};
+for (const c of CROPS) INGREDIENT_SOURCE[c.name] = `Graines en vente : ${c.biomes.map(biomeName).join(', ')}`;
+for (const f of FISH) INGREDIENT_SOURCE[f.name] = `Pêche : ${f.biomes.map(biomeName).join(', ')}`;
+for (const g of GEMS) INGREDIENT_SOURCE[g.name] = `Mine : ${g.biomes.map(biomeName).join(', ')}`;
+for (const fo of FORAGE) INGREDIENT_SOURCE[fo.name] = `Cueillette : ${fo.biomes.map(biomeName).join(', ')}`;
 
 export function Recipes({ selectedId }) {
   const { state } = useStore();
@@ -136,9 +145,13 @@ export function RecipeDetail({ r, embedded }) {
         <div class="card list-rows" style={{ padding: '2px 14px' }}>
           {r.ingredients.map((ing, i) => {
             const own = ingredientOwned(ing, state.pantry);
+            const src = INGREDIENT_SOURCE[ing];
             return (
               <div key={i} class="list-row">
-                <span style={{ flex: 1, fontWeight: 800 }}>{ing}</span>
+                <div class="stack" style={{ gap: '2px', flex: 1 }}>
+                  <span style={{ fontWeight: 800 }}>{ing}</span>
+                  {src && <span class="small muted">{src}</span>}
+                </div>
                 <button class={'btn sm' + (own ? ' ok' : ' ghost')} aria-pressed={own} onClick={() => togglePantry(ing)}>
                   {own ? 'J’en ai' : 'Manque'}
                 </button>

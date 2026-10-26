@@ -19,6 +19,7 @@ export function Valley() {
     ['#/peche', 'Pêche', 'Par biome et remous', 'fish', '#7DB4F5'],
     ['#/cueillette', 'Cueillette', 'Fruits, épices, champignons', 'basket', '#F49AC1'],
     ['#/mines', 'Mines', 'Gemmes par biome', 'gem', '#C3B6F7'],
+    ['#/collection', 'Collection', 'Récompenses de Voie des étoiles', 'star', '#F5C95C'],
     ['#/courses', 'Liste de courses', `${shopping} objet(s) à trouver`, 'list', '#B8E07A']
   ];
 
@@ -32,6 +33,10 @@ export function Valley() {
   return (
     <div class="page wide">
       <h1>Vallée</h1>
+      <a href="#/recherche" class="search">
+        <Icon name="search" size={20} class="muted" />
+        Chercher un objet, une recette, un animal…
+      </a>
       <div class="tiles">
         {tiles.map(([href, name, sub, icon, color]) => (
           <a key={href} class="tile" href={href}>

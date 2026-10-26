@@ -4,10 +4,15 @@ import { useNow, useDesktop } from '../lib/router.js';
 import { crittersNow, sortCritters, feedInfo } from '../lib/game.js';
 import { VARIANT, VARIANTS, METHODS, rangesOf } from '../data/critters.js';
 import { BIOME, EXTENSIONS } from '../data/biomes.js';
+import { CROPS, FISH, FORAGE } from '../data/resources.js';
 import { DAYS_SHORT, availabilityLabel, todayKey } from '../lib/time.js';
 import { Icon, Thumb, Seg, Search, Back, BiomePill, ExtTag, GroupTitle, norm } from '../ui.jsx';
 
 const byName = (a, b) => a.v.name.localeCompare(b.v.name, 'fr');
+
+// Vignette pour un nom de nourriture, quand il correspond à une ressource connue.
+const FOOD_FILE = {};
+for (const it of [...CROPS, ...FISH, ...FORAGE]) FOOD_FILE[it.name] = it.file;
 
 export function Animals({ selectedId }) {
   const { state } = useStore();
@@ -205,12 +210,17 @@ export function AnimalDetail({ v, embedded }) {
         <div class="grid-2">
           <div class="card stack">
             <span class="small" style={{ fontWeight: 900, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--accent)' }}>Préférée</span>
-            <strong>{v.favOverride || sp.fav}</strong>
+            <div class="row" style={{ gap: '8px', alignItems: 'center' }}>
+              {FOOD_FILE[v.favOverride || sp.fav] && <Thumb file={FOOD_FILE[v.favOverride || sp.fav]} name={v.favOverride || sp.fav} />}
+              <strong>{v.favOverride || sp.fav}</strong>
+            </div>
             <span class="small muted">{sp.rewards.fav}</span>
           </div>
           <div class="card stack">
             <span class="small muted" style={{ fontWeight: 900, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Aimée</span>
-            <strong style={{ fontSize: '14px' }}>{sp.liked}</strong>
+            <div class="stack" style={{ gap: '2px' }}>
+              {sp.liked.split(/,\s*/).map((item) => <strong key={item} style={{ fontSize: '14px' }}>{item}</strong>)}
+            </div>
             <span class="small muted">{sp.rewards.liked}</span>
           </div>
         </div>

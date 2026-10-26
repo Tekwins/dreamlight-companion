@@ -2,7 +2,8 @@ import { useState } from 'preact/hooks';
 import { useStore, signOut, exportState, importState, pull } from '../lib/store.js';
 import { sendMagicLink } from '../lib/supabase.js';
 import { EXTENSIONS } from '../data/biomes.js';
-import { Icon, Switch } from '../ui.jsx';
+import { VARIANT } from '../data/critters.js';
+import { Icon, Switch, Back, Thumb } from '../ui.jsx';
 
 const STATUS = {
   local: 'Enregistré sur cet appareil uniquement',
@@ -21,6 +22,7 @@ export function Settings() {
 
   return (
     <div class="page">
+      <Back href="#/" label="Aujourd'hui" />
       <h1>Réglages</h1>
 
       <section class="stack">
@@ -81,15 +83,27 @@ export function Settings() {
       <section class="stack">
         <h2>Rappels</h2>
         <div class="card list-rows" style={{ padding: '2px 16px' }}>
-          {[['rare', 'Couleurs rares du jour', 'Affichées en tête de l’accueil'], ['harvest', 'Récoltes prêtes', 'Signalées sur l’accueil et dans le Potager']].map(([id, name, desc]) => (
+          {[
+            ['rare', 'Couleurs rares du jour', 'Affichées en tête de l’accueil'],
+            ['harvest', 'Récoltes prêtes', 'Signalées sur l’accueil et dans le Potager'],
+            ['star', 'Fin de la Voie des étoiles', 'Quand il ne reste que quelques jours'],
+            ['talk', 'Parler aux habitants', 'Pour ne pas manquer la discussion du jour']
+          ].map(([id, name, desc]) => (
             <div key={id} class="list-row">
               <div class="stack" style={{ gap: '2px', flex: 1 }}><strong>{name}</strong><span class="small muted">{desc}</span></div>
               <Switch on={!!state.reminders[id]} label={name} onChange={(on) => update((s) => ({ reminders: { ...s.reminders, [id]: on } }))} />
             </div>
           ))}
+          <label class="list-row">
+            <span class="stack" style={{ gap: '2px', flex: 1 }}><strong>Heure du rappel quotidien</strong><span class="small muted">Pour les rappels ci-dessus</span></span>
+            <input type="time" value={state.reminders.time} style={{ width: '110px' }}
+              onInput={(e) => update((s) => ({ reminders: { ...s.reminders, time: e.currentTarget.value } }))} />
+          </label>
         </div>
         <div class="small muted">Les notifications quand l'appli est fermée viendront dans une prochaine version.</div>
       </section>
+
+      <WatchedAnimals />
 
       <section class="stack">
         <h2>Sauvegarde</h2>
@@ -114,6 +128,32 @@ export function Settings() {
 
       <div class="small muted" style={{ textAlign: 'center' }}>Données : Dreamlight Valley Wiki et wiki Fandom. Appli non officielle, usage personnel.</div>
     </div>
+  );
+}
+
+// Animaux marqués « Me prévenir » (cloche sur leur fiche) : tous regroupés ici pour les retirer facilement.
+function WatchedAnimals() {
+  const { state, update } = useStore();
+  const ids = Object.keys(state.watched).filter((id) => state.watched[id]);
+  const list = ids.map((id) => VARIANT[id]).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const unwatch = (id) => update((s) => ({ watched: { ...s.watched, [id]: false } }));
+
+  if (!list.length) return null;
+  return (
+    <section class="stack">
+      <h2>Animaux suivis</h2>
+      <div class="card list-rows" style={{ padding: '2px 16px' }}>
+        {list.map((v) => (
+          <div key={v.id} class="list-row">
+            <Thumb file={v.file + '.png'} name={v.name} round />
+            <span style={{ flex: 1, fontWeight: 800 }}>{v.name}</span>
+            <button class="icon-btn" style={{ width: '36px', height: '36px' }} aria-label={`Ne plus suivre ${v.name}`} onClick={() => unwatch(v.id)}>
+              <Icon name="x" size={18} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

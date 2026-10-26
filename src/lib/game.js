@@ -48,6 +48,32 @@ export function biomeName(id) {
   return id === '*' ? 'Partout' : BIOME[id]?.name || id;
 }
 
+const MONTHS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+
+// « 23 septembre au 8 décembre 2026 » -> Date de fin réelle (ou null si illisible).
+export function starPathEndDate(sp) {
+  const m = sp.dates?.match(/au\s+(\d{1,2})\w*\s+([a-zéû]+)\s+(\d{4})/i);
+  if (!m) return null;
+  const month = MONTHS_FR.indexOf(m[2].toLowerCase());
+  if (month === -1) return null;
+  return new Date(+m[3], month, +m[1], 23, 59, 59);
+}
+
+// Progression d'une Voie des étoiles : récompenses cochées (Collection) + palier le plus haut
+// entièrement obtenu (les paliers se débloquent dans l'ordre en jeu).
+export function starPathProgress(sp, done) {
+  const entries = sp.tiers.flatMap((t, ti) => t.rewards.map((r, ri) => ({ key: `${sp.id}:${ti}:${ri}`, tier: t.tier, ...r })));
+  const got = entries.filter((e) => done[e.key]).length;
+  const pct = entries.length ? Math.round((got / entries.length) * 100) : 0;
+  let tier = 0;
+  for (const t of sp.tiers) {
+    const tierEntries = entries.filter((e) => e.tier === t.tier);
+    if (tierEntries.length && tierEntries.every((e) => done[e.key])) tier = t.tier;
+    else break;
+  }
+  return { entries, got, pct, tier, tierCount: sp.tiers.length };
+}
+
 let uid = 0;
 export function newId() {
   uid += 1;

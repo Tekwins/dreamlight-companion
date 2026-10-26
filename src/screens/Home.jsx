@@ -1,7 +1,8 @@
 import { useStore } from '../lib/store.js';
 import { useNow } from '../lib/router.js';
-import { crittersNow, sortCritters } from '../lib/game.js';
+import { crittersNow, sortCritters, starPathEndDate, starPathProgress } from '../lib/game.js';
 import { CROPS } from '../data/resources.js';
+import { STAR_PATHS } from '../data/starpath.js';
 import { VILLAGERS } from '../data/villagers.js';
 import { DAYS, todayKey, formatDuration } from '../lib/time.js';
 import { Icon, Thumb } from '../ui.jsx';
@@ -29,7 +30,17 @@ export function Home() {
   const talked = villagers.filter((v) => state.friendship[v.id]?.talked === today).length;
   const sp = state.starPath;
   const spDone = sp.duties.filter((d) => d.done).length;
+  const spTodo = sp.duties.filter((d) => !d.done).length;
   const hh = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+
+  // Voie des étoiles officielle mise en avant : celle qui se termine le plus tôt (encore active).
+  const spWithEnd = STAR_PATHS.map((p) => ({ p, end: starPathEndDate(p) }));
+  const active = spWithEnd.filter((x) => !x.end || x.end.getTime() > now.getTime());
+  active.sort((a, b) => (a.end?.getTime() ?? Infinity) - (b.end?.getTime() ?? Infinity));
+  const primary = (active[0] || spWithEnd[0])?.p;
+  const primaryEnd = primary ? starPathEndDate(primary) : null;
+  const primaryDaysLeft = primaryEnd ? Math.max(0, Math.ceil((primaryEnd.getTime() - now.getTime()) / 86400000)) : null;
+  const primaryProgress = primary ? starPathProgress(primary, state.starPathRewards) : null;
 
   return (
     <div class="page wide">
@@ -77,6 +88,23 @@ export function Home() {
               {!featured.length && <span class="muted">Aucun animal pour le moment.</span>}
             </div>
           </section>
+
+          {primary && (
+            <a href="#/collection" class="card stack" style={{ gap: '10px', background: 'var(--accent)', color: 'var(--accent-text)' }}>
+              <div class="between">
+                <div class="stack" style={{ gap: '2px' }}>
+                  <span class="small" style={{ fontWeight: 900, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.75 }}>Voie des étoiles</span>
+                  <strong style={{ fontSize: '18px' }}>{primary.name}</strong>
+                </div>
+                {primaryDaysLeft != null && <span style={{ fontWeight: 900, fontSize: '15px', whiteSpace: 'nowrap' }}>J-{primaryDaysLeft}</span>}
+              </div>
+              <div class="bar" style={{ background: 'rgba(0,0,0,.2)' }}><div style={{ width: `${primaryProgress.pct}%`, background: 'var(--accent-text)' }} /></div>
+              <div class="between small" style={{ fontWeight: 800 }}>
+                <span>Palier {primaryProgress.tier} sur {primaryProgress.tierCount}</span>
+                <span>{spTodo ? `${spTodo} devoir${spTodo > 1 ? 's' : ''} à faire` : 'Devoirs à jour'}</span>
+              </div>
+            </a>
+          )}
 
           <div class="tiles">
             <a class="tile" href="#/animaux"><span class="ico" style={{ background: 'var(--teal)' }}><Icon name="paw" /></span><strong>Animaux</strong></a>

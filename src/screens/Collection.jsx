@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { useStore } from '../lib/store.js';
 import { STAR_PATHS } from '../data/starpath.js';
+import { starPathProgress } from '../lib/game.js';
 import { Icon, Thumb, Back } from '../ui.jsx';
 
 // Collection (version allégée) : récompenses de Voie des étoiles obtenues, cochées à la main.
@@ -12,12 +13,7 @@ export function Collection() {
   const done = state.starPathRewards;
   const toggle = (key) => update((s) => ({ starPathRewards: { ...s.starPathRewards, [key]: !s.starPathRewards[key] } }));
 
-  const paths = STAR_PATHS.map((sp) => {
-    const entries = sp.tiers.flatMap((t, ti) => t.rewards.map((r, ri) => ({ key: `${sp.id}:${ti}:${ri}`, ...r })));
-    const got = entries.filter((e) => done[e.key]).length;
-    const pct = entries.length ? Math.round((got / entries.length) * 100) : 0;
-    return { sp, entries, got, pct };
-  });
+  const paths = STAR_PATHS.map((sp) => ({ sp, ...starPathProgress(sp, done) }));
 
   return (
     <div class="page">

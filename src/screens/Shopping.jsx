@@ -33,6 +33,7 @@ export function Shopping() {
         <h1>Liste de courses</h1>
         <span style={{ fontWeight: 800, color: 'var(--teal)' }}>{done} / {items.length}</span>
       </div>
+      <div class="small muted">Classée par façon de l'obtenir, pour faire tes tours de Vallée sans détour.</div>
       <form class="row" onSubmit={add}>
         <label class="search" style={{ flex: 1 }}>
           <span class="sr">Ajouter un objet</span>
