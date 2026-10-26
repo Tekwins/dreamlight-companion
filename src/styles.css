@@ -19,6 +19,27 @@
   color-scheme: dark;
 }
 
+/* Thème sombre « classique » : gris neutres plutôt que le violet/doré de Nuit étoilée,
+   pour qui préfère un look plus sobre sans revenir à un fond clair. */
+[data-theme='minuit'] {
+  --bg: #19191d;
+  --surface: #232327;
+  --surface-2: #2b2b31;
+  --line: #37373e;
+  --nav: #1d1d21;
+  --text: #ededf0;
+  --muted: #9a9aa4;
+  --accent: #f5c95c;
+  --accent-text: #19191d;
+  --teal: #6fd6c2;
+  --pink: #f49ac1;
+  --warn: #ff9d7a;
+  --green: #9bd77a;
+  --pill: #2b2b31;
+  --font-display: 'Baloo 2', 'Nunito', system-ui, sans-serif;
+  color-scheme: dark;
+}
+
 [data-theme='chateau'] {
   --bg: #f6f4fb;
   --surface: #ffffff;

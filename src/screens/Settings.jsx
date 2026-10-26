@@ -61,8 +61,12 @@ export function Settings() {
 
       <section class="stack">
         <h2>Apparence</h2>
-        <div class="grid-2" role="radiogroup" aria-label="Thème">
-          {[['nuit', 'Nuit étoilée', 'Sombre, doré', ['#14123A', '#F5C95C', '#6FD6C2']], ['chateau', 'Château', 'Clair, touche royale', ['#F6F4FB', '#2F4BB8', '#F2C14E']]].map(([id, name, desc, colors]) => (
+        <div class="grid-3" role="radiogroup" aria-label="Thème">
+          {[
+            ['nuit', 'Nuit étoilée', 'Sombre, doré', ['#14123A', '#F5C95C', '#6FD6C2']],
+            ['minuit', 'Minuit', 'Sombre, classique', ['#19191D', '#F5C95C', '#6FD6C2']],
+            ['chateau', 'Château', 'Clair, touche royale', ['#F6F4FB', '#2F4BB8', '#F2C14E']]
+          ].map(([id, name, desc, colors]) => (
             <button key={id} role="radio" aria-checked={state.theme === id} class="card stack"
               style={{ alignItems: 'flex-start', textAlign: 'left', border: `2px solid ${state.theme === id ? 'var(--accent)' : 'var(--line)'}` }}
               onClick={() => update({ theme: id })}>

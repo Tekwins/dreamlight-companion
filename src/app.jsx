@@ -51,7 +51,8 @@ export function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = state.theme || 'nuit';
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', state.theme === 'chateau' ? '#F6F4FB' : '#14123A');
+    const THEME_COLOR = { chateau: '#F6F4FB', minuit: '#19191D' };
+    if (meta) meta.setAttribute('content', THEME_COLOR[state.theme] || '#14123A');
   }, [state.theme]);
 
   // Les rangées .chips n'ont pas de scrollbar visible et le tactile n'existe pas sur PC :
