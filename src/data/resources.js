@@ -33,11 +33,13 @@ export const CROPS = [
   ['Brocoli', 'Broccoli', 60, 40, 152, ['dunes'], 2],
   ['Melon', 'Melon', 40, 30, 93, ['dunes'], 1],
   ['Haricot', 'Bean', 50, 60, 49, ['dunes'], 1],
-  ['Racine-flûte', 'Flute Root', 70, 75, 112, ['dunes'], 2, true],
+  // Nom confirmé par Tek, vu en jeu
+  ['Racine de flûte', 'Flute Root', 70, 75, 112, ['dunes'], 2],
   ['Chou', 'Cabbage', 150, 60, 256, ['meandres'], 2],
   ['Ananas', 'Pineapple', 200, 180, 532, ['meandres'], 3],
   ['Navet', 'Turnip', 100, 240, 187, ['meandres'], 1],
-  ['Lentille rubis', 'Ruby Lentil', 250, 120, 156, ['meandres'], 1, true],
+  // Nom confirmé par Tek, vu en jeu
+  ['Lentille corail', 'Ruby Lentil', 250, 120, 156, ['meandres'], 1],
   ['Orge', 'Barley', 15, 15, 15, ['reliure'], null],
   ['Chou-fleur', 'Cauliflower', 10, 10, 25, ['reliure'], null],
   ['Chia', 'Chia', 5, 5, 6, ['reliure'], null],
@@ -48,7 +50,8 @@ export const CROPS = [
   ['Poivre noir', 'Black Pepper', 70, 90, 83, ['mythopie'], null],
   ['Radis', 'Radish', 100, 105, 133, ['comte'], null],
   ['Avoine', 'Oat', 150, 120, 99, ['comte'], null],
-  ['Seigle féerique', 'Faerie Rye', 60, 72, 62, ['comte'], null, true],
+  // Nom confirmé par Tek, vu en jeu
+  ['Seigle féérique', 'Faerie Rye', 60, 72, 62, ['comte'], null],
   ['Haricot vert', 'Green Bean', 250, 240, 209, ['comte'], null],
   ['Rhubarbe', 'Rhubarb', 200, 180, 229, ['comte'], null],
   ['Betterave', 'Beetroot', 10, 5, 21, ['alpes'], null]
@@ -96,9 +99,11 @@ export const GEMS = [
   ['Diamant', 'Diamond', ['terres'], 600],
   ['Améthyste', 'Amethyst', ['hauteurs', 'terres'], 500],
   ['Zircon bleu', 'Blue Zircon', ['meandres'], 500],
-  ['Pierre alvéolée', 'Honeycomb Stone', ['pixie'], 550, true],
+  // Nom confirmé par Tek, vu en jeu
+  ['Pierre de ruche', 'Honeycomb Stone', ['pixie'], 550],
   ['Spinelle', 'Spinel', ['meandres'], 450],
-  ['Saphir étoilé', 'Star Sapphire', ['comte'], 450, true],
+  // Nom confirmé par Tek, vu en jeu
+  ['Saphir étoile', 'Star Sapphire', ['comte'], 450],
   ['Tourmaline', 'Tourmaline', ['plateau', 'hauteurs'], 420],
   ['Magma', 'Magma', ['mythopie'], 400],
   // Nom confirmé via le wiki FR (champ nom_vo de la fiche)
