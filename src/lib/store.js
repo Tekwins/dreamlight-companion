@@ -17,6 +17,9 @@ export const DEFAULT_STATE = {
   friendship: {},
   favorites: {},
   watched: {},
+  // Succès obtenus et quêtes faites : simples cases à cocher, par id.
+  achievements: {},
+  quests: {},
   reminders: { rare: true, harvest: true, star: true, talk: false, time: '20:00' },
   starPath: { name: '', end: '', duties: [] }
 };

@@ -251,7 +251,9 @@ async function parseStarPath(file) {
   const raw = JSON.parse(await readFile(RAW + '/' + file, 'utf8'));
   const wt = raw.wikitext || '';
   const dates = wt.match(/Disponible du ([^.\n]+)\./);
-  const desc = wt.match(/''([^']{20,}?)''/);
+  // [\s\S] (pas [^'] ) : le texte français contient des apostrophes simples (d'une, l'épée…),
+  // seule une paire d'apostrophes doublées '' doit marquer la fin de l'italique.
+  const desc = wt.match(/''([\s\S]{20,}?)''/);
   const tiers = [];
   const tierRe = /===Palier (\d+)===[\s\S]*?<gallery[^>]*>([\s\S]*?)<\/gallery>/g;
   let m;

@@ -235,7 +235,7 @@ export const STAR_PATHS = [
   "id": "starpath-voie-des-etoiles-aventure-maritime",
   "name": "Aventure maritime",
   "dates": "21 octobre au 1er décembre 2026",
-  "description": "==Astuces== * Liste des Fruits de mer. * Liste des Gemmes bleues et où les trouver. *Fabrique des sentiers en pierres naturelles : Fabrique 100 Voie en pierres naturelles ==Récompenses== ===Palier 1=== <gallery widths=\"100\" heights=\"100\" position=\"center\" mw-collapsible orientation=\"none\" bordersize=\"none\" hideaddbutton=\"true\" bordercolor=\"transparent\" captionalign=\"center\" navigation=\"true\"> Singe lieutenant.png|Singe lieutenant · 50 Sac à dos sirène turquoise.png|Sac à dos sirène turquoise · 60 Pierre de lune.png|",
+  "description": "Bats-toi à l'épée ou nage vers des trésors inouïs avec la Voie des étoiles Aventure maritime ! Que ton souhait soit de prendre la mer en tant que boucanier, de chanter comme une sirène, ou de rôder à la façon d'une créature des profondeurs, cette Voie des étoiles avisée a quelque chose pour toi. Des accessoires sur le thème des sirènes au plus beaux chapeaux de capitaine pirate, en passant par un adorable compagnon bestiole Lieutenant Singe, tu seras prêt(s) pour de nouveau horizons et de nouvelles aventures en un rien de temps !",
   "tiers": [
    {
     "tier": 1,
