@@ -94,39 +94,55 @@ export const FISH = [
   name, file: file + '.png', biomes, ripple, cond, use, todo: !!todo
 }));
 
-// [nom, nom anglais, biomes ('*' = partout), prix]
+// [nom, nom anglais, biomes ('*' = partout), prix, couleur]
+// Couleurs : confirmées par les sous-catégories du wiki FR pour Zircon bleu, Perrénite (orange,
+// pas vert malgré le nom !), Tourmaline (rose), Citrine (orange) et Améthyste (violet) ; les
+// autres sont une estimation d'après la gemme réelle, à vérifier en jeu par Tek.
 export const GEMS = [
-  ['Diamant', 'Diamond', ['terres'], 600],
-  ['Améthyste', 'Amethyst', ['hauteurs', 'terres'], 500],
-  ['Zircon bleu', 'Blue Zircon', ['meandres'], 500],
+  ['Diamant', 'Diamond', ['terres'], 600, 'blanc'],
+  ['Améthyste', 'Amethyst', ['hauteurs', 'terres'], 500, 'violet'],
+  ['Zircon bleu', 'Blue Zircon', ['meandres'], 500, 'bleu'],
   // Nom confirmé par Tek, vu en jeu
-  ['Pierre de ruche', 'Honeycomb Stone', ['pixie'], 550],
-  ['Spinelle', 'Spinel', ['meandres'], 450],
+  ['Pierre de ruche', 'Honeycomb Stone', ['pixie'], 550, 'jaune'],
+  ['Spinelle', 'Spinel', ['meandres'], 450, 'rouge'],
   // Nom confirmé par Tek, vu en jeu
-  ['Saphir étoile', 'Star Sapphire', ['comte'], 450],
-  ['Tourmaline', 'Tourmaline', ['plateau', 'hauteurs'], 420],
-  ['Magma', 'Magma', ['mythopie'], 400],
+  ['Saphir étoile', 'Star Sapphire', ['comte'], 450, 'bleu'],
+  ['Tourmaline', 'Tourmaline', ['plateau', 'hauteurs'], 420, 'rose'],
+  ['Magma', 'Magma', ['mythopie'], 400, 'rouge'],
   // Nom confirmé via le wiki FR (champ nom_vo de la fiche)
-  ['Miellite', 'Bumblestone', ['dunes'], 400],
-  ['Jaspe', 'Jasper', ['gulch'], 400],
-  ['Citrine', 'Citrine', ['bayou', 'plateau'], 380],
-  ['Alexandrite', 'Alexandrite', ['dunes'], 350],
-  ['Émeraude', 'Emerald', ['foret', 'bayou'], 325],
-  ['Onyx', 'Onyx', ['*'], 300],
-  ['Opale', 'Opal', ['reliure'], 300],
-  ['Glace pure', 'Pure Ice', ['comte'], 300],
+  ['Miellite', 'Bumblestone', ['dunes'], 400, 'jaune'],
+  ['Jaspe', 'Jasper', ['gulch'], 400, 'rouge'],
+  ['Citrine', 'Citrine', ['bayou', 'plateau'], 380, 'orange'],
+  ['Alexandrite', 'Alexandrite', ['dunes'], 350, 'vert'],
+  ['Émeraude', 'Emerald', ['foret', 'bayou'], 325, 'vert'],
+  ['Onyx', 'Onyx', ['*'], 300, 'noir'],
+  ['Opale', 'Opal', ['reliure'], 300, 'blanc'],
+  ['Glace pure', 'Pure Ice', ['comte'], 300, 'blanc'],
   // Nom confirmé via le wiki FR (même biome et prix que l'ancienne entrée)
-  ['Perrénite', 'Evergem', ['port'], 300],
-  ['Aigue-marine', 'Aquamarine', ['plage', 'foret'], 250],
-  ['Jade', 'Jade', ['port'], 250],
-  ['Pyrite', 'Pyrite', ['alpes'], 250],
-  ['Topaze', 'Topaz', ['esplanade', 'port', 'reliure'], 240],
-  ['Péridot', 'Peridot', ['prairie', 'plage', 'meandres'], 200],
-  ['Grenat', 'Garnet', ['esplanade', 'prairie', 'dunes'], 160]
-].map(([name, file, biomes, price, todo]) => ({
+  ['Perrénite', 'Evergem', ['port'], 300, 'orange'],
+  ['Aigue-marine', 'Aquamarine', ['plage', 'foret'], 250, 'bleu'],
+  ['Jade', 'Jade', ['port'], 250, 'vert'],
+  ['Pyrite', 'Pyrite', ['alpes'], 250, 'jaune'],
+  ['Topaze', 'Topaz', ['esplanade', 'port', 'reliure'], 240, 'jaune'],
+  ['Péridot', 'Peridot', ['prairie', 'plage', 'meandres'], 200, 'vert'],
+  ['Grenat', 'Garnet', ['esplanade', 'prairie', 'dunes'], 160, 'rouge']
+].map(([name, file, biomes, price, color]) => ({
   id: 'gem-' + file.toLowerCase().replace(/[^a-z]+/g, '-'),
-  name, file: file + '.png', biomes, price, todo: !!todo
+  name, file: file + '.png', biomes, price, color
 }));
+
+// Libellé + pastille pour chaque couleur de gemme (estimation, cf. commentaire ci-dessus).
+export const GEM_COLORS = {
+  blanc: { label: 'Blanc', color: '#F4F0FF' },
+  bleu: { label: 'Bleu', color: '#7DB4F5' },
+  jaune: { label: 'Jaune', color: '#F5C95C' },
+  orange: { label: 'Orange', color: '#FFB27A' },
+  rose: { label: 'Rose', color: '#F49AC1' },
+  rouge: { label: 'Rouge', color: '#E8604C' },
+  violet: { label: 'Violet', color: '#B294E8' },
+  vert: { label: 'Vert', color: '#9BD77A' },
+  noir: { label: 'Noir', color: '#6B6690' }
+};
 
 // [catégorie, nom, nom anglais, biomes, prix de vente (0 = inconnu), utilité]
 export const FORAGE = [

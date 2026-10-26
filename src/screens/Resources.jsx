@@ -1,8 +1,8 @@
 import { useState } from 'preact/hooks';
 import { useStore } from '../lib/store.js';
 import { useNow } from '../lib/router.js';
-import { BIOMES, extOfBiomes } from '../data/biomes.js';
-import { CROPS, FISH, GEMS, FORAGE, RIPPLES } from '../data/resources.js';
+import { BIOMES, EXTENSIONS, extOfBiomes } from '../data/biomes.js';
+import { CROPS, FISH, GEMS, FORAGE, RIPPLES, GEM_COLORS } from '../data/resources.js';
 import { visibleItems, newId, biomeName } from '../lib/game.js';
 import { formatDuration } from '../lib/time.js';
 import { Icon, Thumb, Seg, Back, BiomePills, GroupTitle, ExtTag, Search, norm } from '../ui.jsx';
@@ -33,15 +33,18 @@ const CONFIG = {
   },
   mines: {
     title: 'Mines', items: GEMS, unit: 'gemme',
-    sorts: [['price', 'Prix'], ['name', 'Nom']],
-    sorters: { price: (a, b) => b.price - a.price, name: (a, b) => a.name.localeCompare(b.name, 'fr') }
+    sorts: [['price', 'Prix'], ['name', 'Nom'], ['color', 'Couleur']],
+    sorters: {
+      price: (a, b) => b.price - a.price, name: (a, b) => a.name.localeCompare(b.name, 'fr'),
+      color: (a, b) => Object.keys(GEM_COLORS).indexOf(a.color) - Object.keys(GEM_COLORS).indexOf(b.color) || a.name.localeCompare(b.name, 'fr')
+    }
   }
 };
 
 export function ResourceScreen({ kind }) {
   const cfg = CONFIG[kind];
   const { state, update } = useStore();
-  const [view, setView] = useState('biome');
+  const [view, setView] = useState('list');
   const [biome, setBiome] = useState('');
   const [sort, setSort] = useState(cfg.sorts[0][0]);
   const [ripple, setRipple] = useState('all');
@@ -59,12 +62,15 @@ export function ResourceScreen({ kind }) {
   items = items.slice().sort(cfg.sorters[sort]);
 
   let groups;
-  if (view === 'biome') {
-    groups = present.filter((b) => !biome || b.id === biome).map((b) => ({
-      key: b.id, title: b.name, color: b.color, items: items.filter((it) => it.biomes.includes(b.id))
-    })).filter((g) => g.items.length);
-    const everywhere = items.filter((it) => it.biomes[0] === '*');
-    if (everywhere.length) groups.unshift({ key: '*', title: 'Partout', color: 'var(--muted)', items: everywhere });
+  if (view === 'ext') {
+    // Jeu de base d'abord, puis une section par extension active, dans l'ordre d'EXTENSIONS.
+    const base = items.filter((it) => it.biomes[0] === '*' || !extOfBiomes(it.biomes));
+    groups = [{ key: 'base', title: 'Jeu de base', color: 'var(--muted)', items: base }];
+    for (const e of EXTENSIONS) {
+      const extItems = items.filter((it) => it.biomes[0] !== '*' && extOfBiomes(it.biomes) === e.id);
+      if (extItems.length) groups.push({ key: e.id, title: e.name, color: 'var(--accent)', items: extItems });
+    }
+    groups = groups.filter((g) => g.items.length);
   } else {
     groups = [{ key: 'all', title: null, items }];
   }
@@ -86,7 +92,7 @@ export function ResourceScreen({ kind }) {
       <Back href="#/vallee" label="Vallée" />
       <div class="between">
         <h1>{cfg.title}</h1>
-        <Seg small label="Affichage" value={view} onChange={setView} options={[['biome', 'Par biome'], ['list', 'Liste']]} />
+        <Seg small label="Affichage" value={view} onChange={setView} options={[['list', 'Liste'], ['ext', 'Par extension']]} />
       </div>
 
       {kind === 'potager' && <Plantings onPlant={() => setPlanting(true)} />}
@@ -149,11 +155,13 @@ function ResourceItem({ kind, it, selected, onAction }) {
   const ext = it.biomes[0] === '*' ? null : extOfBiomes(it.biomes);
   return (
     <div class="item">
-      <Thumb file={it.file} name={it.name} round={kind === 'peche'} ring={kind === 'peche' ? RIPPLES[it.ripple].color : null} />
+      <Thumb file={it.file} name={it.name} round={kind === 'peche'}
+        ring={kind === 'peche' ? RIPPLES[it.ripple].color : kind === 'mines' ? GEM_COLORS[it.color]?.color : null} />
       <div class="body">
         <div class="row wrap" style={{ gap: '6px' }}>
           <span class="name">{it.name}</span>
           {kind === 'peche' && <span class="tag" style={{ background: RIPPLES[it.ripple].color }}>{RIPPLES[it.ripple].label}</span>}
+          {kind === 'mines' && <span class="tag" style={{ background: GEM_COLORS[it.color]?.color }}>{GEM_COLORS[it.color]?.label}</span>}
           {it.cond && <span class="tag" style={{ background: '#7DB4F5' }}>{it.cond}</span>}
           {kind === 'cueillette' && <span class="tag outline">{CAT_LABEL[it.cat]}</span>}
           <ExtTag ext={ext} />

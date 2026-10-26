@@ -3,9 +3,11 @@ import { useStore } from '../lib/store.js';
 import { useNow, useDesktop } from '../lib/router.js';
 import { crittersNow, sortCritters, feedInfo } from '../lib/game.js';
 import { VARIANT, VARIANTS, METHODS, rangesOf } from '../data/critters.js';
-import { BIOME } from '../data/biomes.js';
+import { BIOME, EXTENSIONS } from '../data/biomes.js';
 import { DAYS_SHORT, availabilityLabel, todayKey } from '../lib/time.js';
-import { Icon, Thumb, Seg, Search, Back, BiomePill, ExtTag, norm } from '../ui.jsx';
+import { Icon, Thumb, Seg, Search, Back, BiomePill, ExtTag, GroupTitle, norm } from '../ui.jsx';
+
+const byName = (a, b) => a.v.name.localeCompare(b.v.name, 'fr');
 
 export function Animals({ selectedId }) {
   const { state } = useStore();
@@ -14,6 +16,8 @@ export function Animals({ selectedId }) {
   const [filter, setFilter] = useState('now');
   const [q, setQ] = useState('');
   const [hideTamed, setHideTamed] = useState(false);
+  const [group, setGroup] = useState('rare');
+  const [subBiome, setSubBiome] = useState(false);
 
   const selected = selectedId ? VARIANT[selectedId] : null;
   if (selected && !desktop) return <div class="page"><AnimalDetail v={selected} /></div>;
@@ -27,34 +31,76 @@ export function Animals({ selectedId }) {
     const n = norm(q);
     list = list.filter((c) => norm(`${c.v.name} ${c.v.species.fav} ${BIOME[c.v.species.biome]?.name}`).includes(n));
   }
-  list = sortCritters(list);
+  // Par défaut : rares et urgents en premier (inchangé). Sinon : par extension ou alphabétique,
+  // avec un sous-groupe par biome en option — pour ne jamais perdre les rares de vue par défaut.
+  let sections;
+  if (group === 'rare') {
+    sections = [{ key: 'all', title: null, items: sortCritters(list) }];
+  } else {
+    const extTitle = (id) => (id ? EXTENSIONS.find((e) => e.id === id)?.name || id : 'Jeu de base');
+    const primaryKey = (c) => (group === 'ext' ? BIOME[c.v.species.biome]?.ext || '' : 'all');
+    const primaryKeys = group === 'ext'
+      ? [...new Set(list.map(primaryKey))].sort((a, b) => (a === '' ? -1 : b === '' ? 1 : extTitle(a).localeCompare(extTitle(b), 'fr')))
+      : ['all'];
+    sections = primaryKeys.map((pk) => {
+      const bucket = list.filter((c) => primaryKey(c) === pk);
+      let sub;
+      if (subBiome) {
+        const biomeIds = [...new Set(bucket.map((c) => c.v.species.biome))]
+          .sort((a, b) => (BIOME[a]?.name || '').localeCompare(BIOME[b]?.name || '', 'fr'));
+        sub = biomeIds.map((bid) => ({
+          key: bid, title: BIOME[bid]?.name, color: BIOME[bid]?.color,
+          items: bucket.filter((c) => c.v.species.biome === bid).sort(byName)
+        }));
+      } else {
+        sub = [{ key: 'x', title: null, items: bucket.slice().sort(byName) }];
+      }
+      return { key: pk || 'base', title: group === 'ext' ? extTitle(pk) : null, sub };
+    });
+  }
+  if (!('sub' in sections[0])) sections = sections.map((s) => ({ ...s, sub: [{ key: 'x', title: null, items: s.items }] }));
+
+  const CritterRow = ({ c }) => {
+    const { v, av, rare } = c;
+    const tamed = !!state.tamed[v.id];
+    return (
+      <a key={v.id} href={`#/animaux/${v.id}`} class={'item' + (selected?.id === v.id ? ' selected' : '')} style={{ alignItems: 'center', opacity: av.now ? 1 : 0.7 }}>
+        <Thumb file={v.file + '.png'} name={v.name} />
+        <div class="body">
+          <div class="row wrap" style={{ gap: '6px' }}>
+            <span class="name">{v.name}</span>
+            {rare && <span class="tag rare">RARE</span>}
+            {tamed && <span class="tag outline">Apprivoisé</span>}
+            <ExtTag ext={BIOME[v.species.biome]?.ext} />
+          </div>
+          <div class="row wrap" style={{ gap: '4px' }}>
+            <BiomePill id={v.species.biome} />
+            <span class="pill">♥ {v.favOverride || v.species.fav}</span>
+            <span class="pill">{METHODS[v.species.method].label}</span>
+          </div>
+        </div>
+        <div class="side small" style={{ fontWeight: 900, maxWidth: '76px', color: av.urgent ? 'var(--warn)' : av.now ? 'var(--teal)' : 'var(--muted)' }}>
+          {av.text}
+        </div>
+      </a>
+    );
+  };
 
   const listView = (
-    <div class="list">
-      {list.map(({ v, av, rare }) => {
-        const tamed = !!state.tamed[v.id];
-        return (
-          <a key={v.id} href={`#/animaux/${v.id}`} class={'item' + (selected?.id === v.id ? ' selected' : '')} style={{ alignItems: 'center', opacity: av.now ? 1 : 0.7 }}>
-            <Thumb file={v.file + '.png'} name={v.name} />
-            <div class="body">
-              <div class="row wrap" style={{ gap: '6px' }}>
-                <span class="name">{v.name}</span>
-                {rare && <span class="tag rare">RARE</span>}
-                {tamed && <span class="tag outline">Apprivoisé</span>}
-                <ExtTag ext={BIOME[v.species.biome]?.ext} />
-              </div>
-              <div class="row wrap" style={{ gap: '4px' }}>
-                <BiomePill id={v.species.biome} />
-                <span class="pill">♥ {v.favOverride || v.species.fav}</span>
-                <span class="pill">{METHODS[v.species.method].label}</span>
-              </div>
+    <div class="stack" style={{ gap: '16px' }}>
+      {sections.map((s) => (
+        <div key={s.key} class="stack">
+          {s.title && <GroupTitle title={s.title} />}
+          {s.sub.map((sb) => (
+            <div key={sb.key} class="list">
+              {sb.title && <div class="small muted" style={{ fontWeight: 900, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 0' }}>
+                <span class="dot" style={{ background: sb.color, display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginRight: '6px' }} />{sb.title}
+              </div>}
+              {sb.items.map((c) => <CritterRow key={c.v.id} c={c} />)}
             </div>
-            <div class="side small" style={{ fontWeight: 900, maxWidth: '76px', color: av.urgent ? 'var(--warn)' : av.now ? 'var(--teal)' : 'var(--muted)' }}>
-              {av.text}
-            </div>
-          </a>
-        );
-      })}
+          ))}
+        </div>
+      ))}
       {!list.length && <div class="empty">Aucun animal ne correspond.</div>}
     </div>
   );
@@ -70,6 +116,15 @@ export function Animals({ selectedId }) {
       </div>
       <Search value={q} onInput={setQ} placeholder="Animal, aliment, biome…" />
       <Seg label="Filtrer" value={filter} onChange={setFilter} options={[['now', 'Maintenant'], ['today', 'Aujourd’hui'], ['all', 'Tous']]} />
+      <div class="between wrap">
+        <Seg small label="Classer" value={group} onChange={setGroup} options={[['rare', 'Rares d’abord'], ['ext', 'Extension'], ['alpha', 'Alphabétique']]} />
+        {group !== 'rare' && (
+          <label class="row small muted" style={{ gap: '8px', fontWeight: 800 }}>
+            <input type="checkbox" checked={subBiome} onChange={(e) => setSubBiome(e.currentTarget.checked)} style={{ width: '18px', height: '18px', accentColor: 'var(--accent)' }} />
+            Puis par biome
+          </label>
+        )}
+      </div>
       <div class="small muted" style={{ fontWeight: 700 }}>{list.length} animal{list.length > 1 ? 'aux' : ''}</div>
       {desktop ? (
         <div class="split">
