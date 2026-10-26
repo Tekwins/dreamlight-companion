@@ -3,7 +3,7 @@ import { useStore } from '../lib/store.js';
 import { useDesktop } from '../lib/router.js';
 import { RECIPES, RECIPE_TYPES, ingredientOwned, missingFor } from '../data/recipes.js';
 import { recipeLovers, newId } from '../lib/game.js';
-import { Icon, Thumb, Seg, Search, Back, Stars, norm } from '../ui.jsx';
+import { Icon, Thumb, Seg, Search, Back, Stars, ExtTag, norm } from '../ui.jsx';
 
 const RECIPE = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 
@@ -19,7 +19,9 @@ export function Recipes({ selectedId }) {
   const selected = selectedId ? RECIPE[selectedId] : null;
   if (selected && !desktop) return <div class="page"><RecipeDetail r={selected} /></div>;
 
-  let list = RECIPES.filter((r) => (type === 'all' || r.type === type) && (!star || r.stars === star));
+  // Masque les recettes des extensions désactivées (recettes complètes générées depuis le wiki FR).
+  let list = RECIPES.filter((r) => !r.ext || state.extensions[r.ext])
+    .filter((r) => (type === 'all' || r.type === type) && (!star || r.stars === star));
   if (favOnly) list = list.filter((r) => state.favorites[r.id]);
   if (q) list = list.filter((r) => norm(r.name + ' ' + r.ingredients.join(' ')).includes(norm(q)));
   const byName = (a, b) => a.name.localeCompare(b.name, 'fr');
@@ -42,7 +44,7 @@ export function Recipes({ selectedId }) {
                 <Stars n={r.stars} />
               </div>
               <span class="small muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {RECIPE_TYPES[r.type]} · {r.ingredients.join(', ')}
+                {RECIPE_TYPES[r.type]} · {r.ingredients.join(', ')} <ExtTag ext={r.ext} />
               </span>
               {miss === 0 && <span class="small" style={{ color: 'var(--teal)', fontWeight: 800 }}>Tout est dans ton garde-manger</span>}
             </div>
@@ -50,7 +52,6 @@ export function Recipes({ selectedId }) {
         );
       })}
       {!list.length && <div class="empty">Aucune recette ne correspond.</div>}
-      <div class="small muted" style={{ textAlign: 'center', padding: '8px' }}>Échantillon de départ : la liste complète arrive avec le script de données.</div>
     </div>
   );
 
@@ -116,9 +117,13 @@ export function RecipeDetail({ r, embedded }) {
         <div class="stack" style={{ gap: '6px' }}>
           <h1 style={{ fontSize: '26px' }}>{r.name}</h1>
           <span style={{ fontSize: '18px' }}><Stars n={r.stars} /></span>
-          <div class="row" style={{ gap: '6px' }}>
+          {/* Énergie, prix et extension : disponibles depuis la génération complète des recettes */}
+          <div class="row wrap" style={{ gap: '6px' }}>
             <span class="pill">{RECIPE_TYPES[r.type]}</span>
             {r.veg && <span class="pill">Végétarien</span>}
+            <span class="pill">{r.energy.toLocaleString('fr-FR')} énergie</span>
+            <span class="pill">{r.price.toLocaleString('fr-FR')} pièces</span>
+            <ExtTag ext={r.ext} />
           </div>
         </div>
       </div>

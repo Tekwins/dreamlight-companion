@@ -7,7 +7,9 @@ export function Pantry() {
   const have = state.pantry;
   const toggle = (name) => update((s) => ({ pantry: { ...s.pantry, [name]: !s.pantry[name] } }));
   const byStars = (a, b) => b.r.stars - a.r.stars || a.r.name.localeCompare(b.r.name, 'fr');
-  const scored = RECIPES.map((r) => ({ r, miss: missingFor(r, have) }));
+  // Masque les recettes des extensions désactivées.
+  const visible = RECIPES.filter((r) => !r.ext || state.extensions[r.ext]);
+  const scored = visible.map((r) => ({ r, miss: missingFor(r, have) }));
   const ok = scored.filter((x) => !x.miss.length).sort(byStars);
   const almost = scored.filter((x) => x.miss.length === 1).sort(byStars);
 

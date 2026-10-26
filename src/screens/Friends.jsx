@@ -32,7 +32,8 @@ export function Friends() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))', gap: '8px' }}>
         {list.map((v) => (
           <div key={v.id} class="item" style={{ alignItems: 'center' }}>
-            <Thumb name={v.name} round ring={v.level >= 10 ? 'var(--pink)' : 'var(--teal)'} />
+            {/* v.file vient maintenant des données générées : affiche la vraie image de l'habitant */}
+            <Thumb file={v.file} name={v.name} round ring={v.level >= 10 ? 'var(--pink)' : 'var(--teal)'} />
             <div class="body">
               <div class="between">
                 <span class="name">{v.name}</span>
@@ -52,7 +53,6 @@ export function Friends() {
           </div>
         ))}
       </div>
-      <div class="small muted" style={{ textAlign: 'center' }}>Liste de départ : tous les habitants arriveront avec le script de données.</div>
     </div>
   );
 }

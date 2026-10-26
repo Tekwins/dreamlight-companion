@@ -4,7 +4,9 @@
 export const EXTENSIONS = [
   { id: 'rift', name: 'A Rift in Time', short: 'Rift', areas: 'Port antique, Dunes scintillantes, Méandres sauvages' },
   { id: 'vale', name: 'The Storybook Vale', short: 'Vale', areas: 'Reliure, Mythopie, Comté des Contes' },
-  { id: 'ranch', name: 'Wishblossom Ranch', short: 'Ranch', areas: 'Ranch de Florespérance et ses environs' }
+  { id: 'ranch', name: 'Wishblossom Ranch', short: 'Ranch', areas: 'Ranch de Florespérance et ses environs' },
+  // Petit pack d'aventure (Winnie l'ourson, Bourriquet, Porcinet) : pas de nouveau biome confirmé pour l'instant.
+  { id: 'honeyglow', name: 'Honeyglow Woods', short: 'Honeyglow', areas: 'Winnie l\'ourson et ses amis' }
 ];
 
 export const BIOMES = [

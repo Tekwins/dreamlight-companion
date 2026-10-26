@@ -134,7 +134,8 @@ export function GroupTitle({ color, title, count }) {
 
 export function ExtTag({ ext }) {
   if (!ext) return null;
-  const label = { rift: 'Rift', vale: 'Vale', ranch: 'Ranch' }[ext] || ext;
+  // Ajout de "honeyglow" : nouvelle extension (Winnie l'ourson et ses amis).
+  const label = { rift: 'Rift', vale: 'Vale', ranch: 'Ranch', honeyglow: 'Honeyglow' }[ext] || ext;
   return <span class="tag">{label}</span>;
 }
 
