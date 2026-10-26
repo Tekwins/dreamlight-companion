@@ -12,6 +12,7 @@ import { Pantry } from './screens/Pantry.jsx';
 import { Shopping } from './screens/Shopping.jsx';
 import { Friends } from './screens/Friends.jsx';
 import { Guide } from './screens/Guide.jsx';
+import { Recherche } from './screens/Recherche.jsx';
 import { Settings } from './screens/Settings.jsx';
 
 const TABS = [
@@ -33,12 +34,13 @@ function screenFor(route) {
     case undefined: return <Home />;
     case 'animaux': return <Animals selectedId={second} />;
     case 'vallee': return <Valley />;
-    case 'potager': case 'peche': case 'cueillette': case 'mines': return <ResourceScreen kind={first} />;
+    case 'potager': case 'peche': case 'cueillette': case 'mines': return <ResourceScreen kind={first} initialQ={route.query.get('q') || ''} />;
     case 'recettes': return <Recipes selectedId={second} />;
     case 'garde-manger': return <Pantry />;
     case 'courses': return <Shopping />;
     case 'amitie': return <Friends />;
     case 'guide': return <Guide />;
+    case 'recherche': return <Recherche />;
     case 'reglages': return <Settings />;
     default: return <Home />;
   }
@@ -76,6 +78,7 @@ export function App() {
     <div class="shell">
       <nav class="side-nav" aria-label="Navigation principale">
         <div class="brand"><img src="icon-192.png" alt="" />Dreamlight</div>
+        <a href="#/recherche" class={path.startsWith('/recherche') ? 'on' : ''}><Icon name="search" />Recherche</a>
         {TABS.map((t) => (
           <Fragment key={t.href}>
             <a href={t.href} class={t.match(path) && !(SUB[t.href] || []).some(([h]) => subActive(h)) ? 'on' : ''}>

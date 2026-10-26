@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { useStore } from '../lib/store.js';
 import { useNow } from '../lib/router.js';
 import { BIOMES, EXTENSIONS, extOfBiomes } from '../data/biomes.js';
@@ -41,7 +41,7 @@ const CONFIG = {
   }
 };
 
-export function ResourceScreen({ kind }) {
+export function ResourceScreen({ kind, initialQ }) {
   const cfg = CONFIG[kind];
   const { state, update } = useStore();
   const [view, setView] = useState('list');
@@ -49,8 +49,10 @@ export function ResourceScreen({ kind }) {
   const [sort, setSort] = useState(cfg.sorts[0][0]);
   const [ripple, setRipple] = useState('all');
   const [cat, setCat] = useState('all');
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState(initialQ || '');
   const [planting, setPlanting] = useState(null);
+  // Arrivée depuis la Recherche globale avec un terme différent : on le reprend.
+  useEffect(() => { if (initialQ) setQ(initialQ); }, [initialQ]);
 
   let items = visibleItems(cfg.items, state.extensions);
   const present = BIOMES.filter((b) => items.some((it) => it.biomes.includes(b.id)));

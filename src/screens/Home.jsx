@@ -40,7 +40,10 @@ export function Home() {
           </div>
           <h1>Ta journée dans la Vallée</h1>
         </div>
-        <a class="icon-btn" href="#/reglages" aria-label="Réglages"><Icon name="gear" /></a>
+        <div class="row" style={{ gap: '8px' }}>
+          <a class="icon-btn" href="#/recherche" aria-label="Recherche"><Icon name="search" /></a>
+          <a class="icon-btn" href="#/reglages" aria-label="Réglages"><Icon name="gear" /></a>
+        </div>
       </header>
 
       {!session && (
