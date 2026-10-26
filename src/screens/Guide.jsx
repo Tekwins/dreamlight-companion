@@ -64,12 +64,14 @@ function Quests() {
   const done = state.quests;
   const [q, setQ] = useState('');
   const [open, setOpen] = useState({});
-  const count = QUESTS.filter((x) => done[x.id]).length;
   const toggle = (id) => update((s) => ({ quests: { ...s.quests, [id]: !s.quests[id] } }));
   const toggleOpen = (id) => setOpen((o) => ({ ...o, [id]: !o[id] }));
+  // Quêtes d'amitié d'un habitant dont l'extension est désactivée : masquées, comme le reste de l'appli.
+  const visible = QUESTS.filter((x) => x.kind !== 'friendship' || !VILLAGER[x.villagerId]?.ext || state.extensions[VILLAGER[x.villagerId].ext]);
+  const count = visible.filter((x) => done[x.id]).length;
   const list = q
-    ? QUESTS.filter((x) => norm(`${x.name} ${x.villagerName || ''}`).includes(norm(q)))
-    : QUESTS;
+    ? visible.filter((x) => norm(`${x.name} ${x.villagerName || ''}`).includes(norm(q)))
+    : visible;
 
   const story = list.filter((x) => x.kind === 'story');
   const other = list.filter((x) => x.kind === 'other');
@@ -102,7 +104,7 @@ function Quests() {
     <div class="stack" style={{ gap: '14px' }}>
       <div class="between">
         <h2>Quêtes</h2>
-        <span style={{ fontWeight: 800, color: 'var(--accent)' }}>{count} / {QUESTS.length} faites</span>
+        <span style={{ fontWeight: 800, color: 'var(--accent)' }}>{count} / {visible.length} faites</span>
       </div>
       <Search value={q} onInput={setQ} placeholder="Chercher une quête ou un habitant…" />
       {!list.length && <div class="empty">Aucune quête ne correspond.</div>}
