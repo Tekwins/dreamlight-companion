@@ -66,8 +66,8 @@ function Quests() {
   const [open, setOpen] = useState({});
   const toggle = (id) => update((s) => ({ quests: { ...s.quests, [id]: !s.quests[id] } }));
   const toggleOpen = (id) => setOpen((o) => ({ ...o, [id]: !o[id] }));
-  // Quêtes d'amitié d'un habitant dont l'extension est désactivée : masquées, comme le reste de l'appli.
-  const visible = QUESTS.filter((x) => x.kind !== 'friendship' || !VILLAGER[x.villagerId]?.ext || state.extensions[VILLAGER[x.villagerId].ext]);
+  // Quêtes d'une extension désactivée (principales, d'amitié ou autres) : masquées, comme le reste de l'appli.
+  const visible = QUESTS.filter((x) => !x.ext || state.extensions[x.ext]);
   const count = visible.filter((x) => done[x.id]).length;
   const list = q
     ? visible.filter((x) => norm(`${x.name} ${x.villagerName || ''}`).includes(norm(q)))

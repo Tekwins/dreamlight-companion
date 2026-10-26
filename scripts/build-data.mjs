@@ -369,11 +369,17 @@ async function parseQuests(villagers) {
     let kind = 'other';
     if (type.startsWith('Histoire')) kind = 'story';
     else if (type.startsWith('Amitié') && villager) kind = 'friendship';
+    // Extension requise : la catégorie de la quête elle-même (fiable pour rift/vale/ranch), avec
+    // la fiche de l'habitant en repli (les quêtes Honeyglow Woods ne portent pas toujours le tag).
+    const cats = [...wt.matchAll(/\[\[Catégorie:([^\]]+)\]\]/g)].map((m) => m[1]);
+    let ext = null;
+    for (const c of cats) if (EXT_CAT[c]) ext = EXT_CAT[c];
+    ext = ext || villager?.ext || null;
     // Description : les paragraphes en italique entre la fiche et ==Objectifs==.
     const introM = wt.match(/\}\}\n+([\s\S]*?)\n==\s*Objectifs\s*==/);
     const description = introM ? cleanWikitext(introM[1]).slice(0, 600) : '';
     quests.push({
-      name: raw.title, kind, villagerId: villager?.id, villagerName: villager?.name,
+      name: raw.title, kind, villagerId: villager?.id, villagerName: villager?.name, ext,
       description, steps: parseSteps(wt), rewards: parseRewards(wt)
     });
   }
@@ -389,10 +395,12 @@ async function writeQuests(quests) {
   lines.push('// Quêtes, générées depuis le wiki Fandom francophone (Catégorie:Quêtes).');
   lines.push("// kind : 'story' (quête principale), 'friendship' (quête d'habitant, avec villagerId/villagerName) ou 'other'");
   lines.push('// (royaume, quotidienne, événement, lot de rêve…). steps : étapes (et leurs détails en sub-liste).');
+  lines.push('// ext : extension requise, si la quête en dépend.');
   lines.push('export const QUESTS = [');
   for (const q of quests) {
     const entry = { id: 'quest-' + slug(q.name), name: q.name, kind: q.kind };
     if (q.kind === 'friendship') { entry.villagerId = q.villagerId; entry.villagerName = q.villagerName; }
+    if (q.ext) entry.ext = q.ext;
     if (q.description) entry.description = q.description;
     if (q.steps.length) entry.steps = q.steps;
     if (q.rewards) entry.rewards = q.rewards;
