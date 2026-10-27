@@ -212,6 +212,30 @@ async function fetchImages() {
   await mkdir('public/img', { recursive: true });
   const files = await referencedImages();
   console.log(files.length, 'images à récupérer');
+
+  // Meubles : la quasi-totalité n'est documentée que sur le wiki FR (Fandom, bloqué par
+  // Cloudflare) — inutile de perdre 12s par échec dessus. mydreamlightvalley.com héberge ses
+  // propres images (~3870 meubles répertoriés, bonne couverture) : on l'essaie en premier,
+  // avant même le wiki, uniquement pour les meubles.
+  const furnitureMod = await import('../src/data/furniture.js');
+  const missingFurniture = furnitureMod.FURNITURE.filter((f) => !existsSync(path.join('public/img', f.file.replace(/ /g, '_'))));
+  if (missingFurniture.length) {
+    console.log(missingFurniture.length, "meubles sans image, on essaie mydreamlightvalley.com d'abord");
+    const map = await mdvNameMap('furniture', 'furnitures', /^Meubles\s+/);
+    for (const it of missingFurniture) {
+      const url = map[normName(it.name)];
+      if (!url) continue;
+      try {
+        const result = await saveImage(url, it.file);
+        if (result === 'ok') console.log('  ok (mdv)', it.file);
+        else console.warn('  ?? (mdv)', it.file, '-', result);
+      } catch (e) {
+        console.warn('  !! (mdv)', it.file, '-', e.message);
+      }
+      await sleep(300);
+    }
+  }
+
   for (const name of files) {
     const out = path.join('public/img', name.replace(/ /g, '_'));
     if (existsSync(out)) continue;
@@ -224,7 +248,7 @@ async function fetchImages() {
     } catch (e) {
       console.warn('  !!', name, '-', e.message);
     }
-    await sleep(6000); // délai généreux entre chaque image : évite de redéclencher la limite du wiki
+    await sleep(12000); // délai généreux entre chaque image : évite de redéclencher la limite du wiki
   }
 
   await fetchImagesFromMdv();
@@ -246,8 +270,11 @@ async function mdvSlugs(category) {
   return [...new Set([...xml.matchAll(re)].map((m) => m[1].split('/').pop()))];
 }
 
-// Table nom français normalisé -> URL d'image, pour une catégorie mydreamlightvalley.com (meal/character).
-async function mdvNameMap(category) {
+// Table nom français normalisé -> URL d'image, pour une catégorie mydreamlightvalley.com
+// (meal/character/furniture…). imgFolder : dossier d'images du site, pas toujours le même mot
+// que la catégorie d'URL (ex. furniture -> furnitures) ; prefixRe : préfixe du <title> à retirer
+// avant le nom (varie selon la catégorie : "Détail: ", "Personnage: ", "Meubles ").
+async function mdvNameMap(category, imgFolder = '(?:meals|characters)', prefixRe = /^(Détail|Personnage): /) {
   const slugs = await mdvSlugs(category);
   const map = {};
   for (const slug of slugs) {
@@ -255,8 +282,8 @@ async function mdvNameMap(category) {
       const res = await fetch(`${MDV}/fr/${category}/${slug}`, { headers: { 'User-Agent': UA } });
       const html = await res.text();
       const titleM = html.match(/<title>([^<]*)<\/title>/);
-      const imgM = html.match(/src="(\/images\/(?:meals|characters)\/[^"]+\.png[^"]*)"/);
-      const name = titleM?.[1]?.replace(/ - My Dreamlight Valley$/, '').replace(/^(Détail|Personnage): /, '').trim();
+      const imgM = html.match(new RegExp('src="(\\/images\\/' + imgFolder + '\\/[^"]+\\.png[^"]*)"'));
+      const name = titleM?.[1]?.replace(/ - My Dreamlight Valley$/, '').replace(prefixRe, '').trim();
       if (name && imgM) map[normName(name)] = MDV + imgM[1];
     } catch { /* page suivante */ }
     await sleep(120);
