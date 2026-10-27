@@ -211,7 +211,8 @@ function parseVillagerRewards(wt) {
     if (!lvlM || lines.length < 4) continue;
     const name = cleanWikitext(lines[2].replace(/^\|/, '')).replace(/\*+$/, '').trim();
     const type = cleanWikitext(lines[3].replace(/^\|/, '')).trim();
-    if (!name) continue; // ligne laissée vide sur le wiki (contenu pas encore documenté)
+    // Ligne laissée vide, ou lien wiki vide ([[]]) : récompense pas encore documentée sur le wiki
+    if (!name || name === '[[]]') continue;
     rewards.push({ level: +lvlM[1], name, type });
   }
   return rewards;
