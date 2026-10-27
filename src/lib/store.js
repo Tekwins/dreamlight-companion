@@ -25,7 +25,10 @@ export const DEFAULT_STATE = {
   reminders: { rare: true, harvest: true, star: true, talk: false, time: '20:00' },
   starPath: { name: '', end: '', duties: [] },
   // Récompenses de Voie des étoiles obtenues (Collection), par clé "idVoie:tier:index".
-  starPathRewards: {}
+  starPathRewards: {},
+  // Collection (onglets Souvenirs/Meubles) : cases cochées, par id (src/data/memories.js et furniture.js).
+  memoriesOwned: {},
+  furnitureOwned: {}
 };
 
 const listeners = new Set();

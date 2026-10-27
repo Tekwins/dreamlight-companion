@@ -3,9 +3,10 @@
 // et les images des objets déjà référencés dans src/data.
 //
 // Utilisation (depuis le dossier du projet, Node 18 ou plus) :
-//   npm run data            -> pages brutes dans data/raw/<wiki>/<page>.json
-//   npm run data -- images  -> images dans public/img/ (pour ne plus dépendre du wiki)
-//   npm run data -- quetes  -> relance juste les ~660 pages de quêtes (sans tout retélécharger)
+//   npm run data              -> pages brutes dans data/raw/<wiki>/<page>.json
+//   npm run data -- images    -> images dans public/img/ (pour ne plus dépendre du wiki)
+//   npm run data -- quetes    -> relance juste les ~660 pages de quêtes (sans tout retélécharger)
+//   npm run data -- collection -> listes de catégories Meubles + page Souvenirs (pour Collection)
 //
 // Les pages brutes servent ensuite à générer les fichiers de src/data
 // (recettes complètes, habitants, quêtes, succès, Voies des étoiles).
@@ -48,7 +49,39 @@ const TARGETS = [
   { wiki: 'frfandom', page: 'Voie des étoiles Aventure maritime' },
   // Chaque page de quête a une fiche avec son type (Histoire/Amitié) et, pour les quêtes
   // d'amitié, l'image de l'habitant concerné : pas besoin de corréler avec le wiki anglais.
-  { wiki: 'frfandom', category: 'Quêtes' }
+  { wiki: 'frfandom', category: 'Quêtes' },
+  // Meubles : ~1400 fiches individuelles, trop pour les ouvrir une à une. Un meuble peut
+  // appartenir à plusieurs de ces 23 catégories à la fois (vraie taxonomie du jeu, trouvée dans
+  // Modèle:NAVBOX Meubles) : on ne récupère que la liste des titres par catégorie (listOnly),
+  // pas les fiches complètes (prix/dimensions non nécessaires pour une simple collection cochée).
+  { wiki: 'frfandom', category: 'Maison', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Essentiels', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Décor', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Huisseries', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Tables', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Lits', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Sièges', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Espace de stockage', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Appareil', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Appareils électroniques', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Commodités', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Art', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Luminaires', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Feuillage', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Tapis', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Divers', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Papier peint', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Sols', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Portes', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Fenêtres', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Paysage', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Mur', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Plafond', listOnly: true, group: 'collection' },
+  { wiki: 'frfandom', category: 'Attractions', listOnly: true, group: 'collection' },
+  // Souvenirs : une seule page sur le wiki EN (dlv), déjà groupée par univers Disney/Pixar via
+  // des gabarits {{Memory|...}} (245 souvenirs). Pas d'équivalent FR page-par-page : les noms
+  // d'univers seront traduits à la main dans build-data.mjs (noms Disney officiels bien connus).
+  { wiki: 'dlv', page: 'Memories', group: 'collection' }
 ];
 
 const UA = 'DreamlightCompagnon/0.1 (usage personnel ; contact via GitHub Tekwins)';
@@ -107,7 +140,7 @@ async function fetchPages(targets = TARGETS) {
   for (const t of targets) {
     try {
       const titles = t.category ? await categoryPages(t.wiki, t.category) : [t.page];
-      if (t.listOnly) { await saveTitleList(t.wiki, t.category, titles); continue; }
+      if (t.listOnly) { await saveTitleList(t.wiki, t.category, titles); await sleep(1500); continue; }
       for (const title of titles) {
         try { await savePage(t.wiki, title); } catch (e) { console.warn('  !!', t.wiki, title, '-', e.message); }
         await sleep(400); // rester poli avec les wikis
@@ -262,4 +295,6 @@ const mode = process.argv[2];
 if (mode === 'images') await fetchImages();
 // Relance juste les quêtes (657 pages) sans retéléchargement complet : npm run data -- quetes
 else if (mode === 'quetes') await fetchPages(TARGETS.filter((t) => t.category === 'Quêtes'));
+// Meubles (listes de catégories) + Souvenirs (page Memories) : npm run data -- collection
+else if (mode === 'collection') await fetchPages(TARGETS.filter((t) => t.group === 'collection'));
 else await fetchPages();

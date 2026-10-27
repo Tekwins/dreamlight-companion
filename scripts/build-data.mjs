@@ -5,9 +5,11 @@
 // Utilisation : npm run build-data
 
 import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([a-zA-Z]:)/, '$1');
 const RAW = ROOT + 'data/raw/frfandom';
+const RAW_DLV = ROOT + 'data/raw/dlv';
 
 function num(s) {
   return parseInt((s || '').replace(/[^0-9]/g, ''), 10) || 0;
@@ -459,6 +461,137 @@ async function writeQuests(quests) {
   console.log('src/data/quests.js écrit (' + quests.length + ' quêtes).');
 }
 
+// Les 23 vraies catégories de meubles du jeu (trouvées dans Modèle:NAVBOX Meubles du wiki FR,
+// pas inventées) : un meuble peut appartenir à plusieurs à la fois.
+const FURNITURE_CATS = [
+  ['maison', 'Maison'], ['essentiels', 'Essentiels'], ['decor', 'Décor'], ['huisseries', 'Huisseries'],
+  ['tables', 'Tables'], ['lits', 'Lits'], ['sieges', 'Sièges'], ['stockage', 'Espace de stockage'],
+  ['appareil', 'Appareil'], ['electronique', 'Appareils électroniques'], ['commodites', 'Commodités'],
+  ['art', 'Art'], ['luminaires', 'Luminaires'], ['feuillage', 'Feuillage'], ['tapis', 'Tapis'],
+  ['divers', 'Divers'], ['papier-peint', 'Papier peint'], ['sols', 'Sols'], ['portes', 'Portes'],
+  ['fenetres', 'Fenêtres'], ['paysage', 'Paysage'], ['mur', 'Mur'], ['plafond', 'Plafond'],
+  ['attractions', 'Attractions']
+];
+
+async function parseFurniture() {
+  const byName = new Map();
+  for (const [id, label] of FURNITURE_CATS) {
+    const file = RAW + '/_liste_' + label + '.json';
+    if (!existsSync(file)) continue;
+    const raw = JSON.parse(await readFile(file, 'utf8'));
+    for (const title of raw.titles) {
+      if (!byName.has(title)) byName.set(title, new Set());
+      byName.get(title).add(id);
+    }
+  }
+  return [...byName.entries()]
+    .map(([name, cats]) => ({ id: 'meuble-' + slug(name), name, file: name + '.png', cats: [...cats] }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+}
+
+async function writeFurniture(items) {
+  const lines = [];
+  lines.push('// Meubles, générés depuis les listes de catégories du wiki Fandom francophone.');
+  lines.push("// FURNITURE_CATEGORIES : les 23 catégories réelles du jeu (Modèle:NAVBOX Meubles),");
+  lines.push('// pas une simplification inventée. Un meuble peut appartenir à plusieurs à la fois.');
+  lines.push("// Pas de prix/dimensions : juste de quoi cocher ce qu'on possède, par catégorie.");
+  lines.push('export const FURNITURE_CATEGORIES = [');
+  for (const [id, label] of FURNITURE_CATS) lines.push(`  ['${id}', ${JSON.stringify(label)}],`);
+  lines.push('];');
+  lines.push('');
+  lines.push('export const FURNITURE = [');
+  for (const it of items) {
+    lines.push(`  { id: '${it.id}', name: ${JSON.stringify(it.name)}, file: ${JSON.stringify(it.file)}, cats: ${JSON.stringify(it.cats)} },`);
+  }
+  lines.push('];');
+  lines.push('');
+  await writeFile(ROOT + 'src/data/furniture.js', lines.join('\n'));
+  console.log('src/data/furniture.js écrit (' + items.length + ' meubles).');
+}
+
+// Noms d'univers Disney/Pixar officiels en français, pour traduire les titres de section du
+// wiki EN (seule source avec les souvenirs déjà groupés par univers). Les sections sans
+// correspondance ici (journaux/carnets, Événements à part, notes diverses) ne sont pas des
+// souvenirs {{Memory|...}} structurés : on ne les inclut pas plutôt que d'inventer une liste.
+const MEMORY_UNIVERSE_FR = {
+  'Dreamlight Valley': 'Dreamlight Valley',
+  Events: 'Événements',
+  'WALL-E': 'WALL-E',
+  Moana: 'Vaiana',
+  Ratatouille: 'Ratatouille',
+  Brave: 'Rebelle',
+  "Tim Burton's The Nightmare Before Christmas": "L'Étrange Noël de Monsieur Jack",
+  Encanto: 'Encanto',
+  'Lilo & Stitch': 'Lilo et Stitch',
+  Aladdin: 'Aladdin',
+  'Beauty and the Beast': 'La Belle et la Bête',
+  Hercules: 'Hercule',
+  'Sleeping Beauty': 'La Belle au bois dormant',
+  'The Princess and the Frog': 'La Princesse et la Grenouille',
+  'Wreck-It Ralph': 'Les Mondes de Ralph',
+  Cinderella: 'Cendrillon',
+  'The Lion King': 'Le Roi Lion',
+  'The Little Mermaid': 'La Petite Sirène',
+  Frozen: 'La Reine des neiges',
+  Tangled: 'Raiponce',
+  'Monsters, Inc.': 'Monstres et Cie',
+  'Toy Story': 'Toy Story',
+  'Mickey & Friends': 'Mickey et ses amis',
+  'The Sword in the Stone': "Merlin l'enchanteur",
+  'Snow White': 'Blanche-Neige',
+  Mulan: 'Mulan',
+  'One Hundred and One Dalmatians': 'Les 101 Dalmatiens',
+  'Peter Pan': 'Peter Pan',
+  'Winnie the Pooh': "Winnie l'ourson"
+};
+
+async function parseMemories() {
+  const raw = JSON.parse(await readFile(RAW_DLV + '/Memories.json', 'utf8'));
+  // Des souvenirs pas encore confirmés par la communauté sont parfois mis en commentaire HTML
+  // (ex. <!--{{Memory|Dreamlight Valley Memory 8|12|...|missing=yes}}-->) : à exclure, sinon on
+  // compte deux fois le même souvenir (vu sur "Dreamlight Valley Memory 8" avant ce correctif).
+  const wt = (raw.wikitext || '').replace(/<!--[\s\S]*?-->/g, '');
+  const sectionRe = /^==+\s*(?:<span[^>]*>)?(?:\[\[File:[^\]]*\]\]\s*)?([^=<\n]+?)\s*(?:<\/span>)?==+\s*$/gm;
+  const matches = [...wt.matchAll(sectionRe)];
+  const items = [];
+  const seenFiles = new Set();
+  for (let i = 0; i < matches.length; i++) {
+    const fr = MEMORY_UNIVERSE_FR[matches[i][1].trim()];
+    if (!fr) continue;
+    const start = matches[i].index + matches[i][0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index : wt.length;
+    const body = wt.slice(start, end);
+    const links = [...body.matchAll(/\{\{Memory\|([^|}]+)\|/g)].map((m) => m[1].trim());
+    for (const link of links) {
+      const file = link + '.png';
+      // Un même visuel est parfois réutilisé pour plusieurs entrées du wiki (vignette générique
+      // « pièce manquante », ou une série de journaux qui partage sa couverture) : une seule
+      // coche dans la collection plutôt que plusieurs lignes identiques et déroutantes.
+      if (seenFiles.has(file)) continue;
+      seenFiles.add(file);
+      const idx = items.filter((it) => it.universe === fr).length + 1;
+      items.push({ id: 'souvenir-' + slug(fr) + '-' + idx, universe: fr, index: idx, file });
+    }
+  }
+  return items;
+}
+
+async function writeMemories(items) {
+  const lines = [];
+  lines.push('// Souvenirs, générés depuis la page "Memories" du wiki EN (dreamlightvalleywiki.com),');
+  lines.push("// seule source où ils sont déjà groupés par univers Disney/Pixar. Pas de nom individuel");
+  lines.push("// distinctif dans le jeu lui-même (juste numérotés par univers) : noms d'univers traduits");
+  lines.push('// à la main (noms Disney officiels), items simplement numérotés.');
+  lines.push('export const MEMORIES = [');
+  for (const it of items) {
+    lines.push(`  { id: '${it.id}', universe: ${JSON.stringify(it.universe)}, index: ${it.index}, file: ${JSON.stringify(it.file)} },`);
+  }
+  lines.push('];');
+  lines.push('');
+  await writeFile(ROOT + 'src/data/memories.js', lines.join('\n'));
+  console.log('src/data/memories.js écrit (' + items.length + ' souvenirs).');
+}
+
 async function main() {
   const recipes = await parsePlats();
   console.log('Recettes extraites :', recipes.length);
@@ -539,6 +672,14 @@ async function main() {
   const quests = await parseQuests(villagers);
   console.log('Quêtes extraites :', quests.length);
   await writeQuests(quests);
+
+  const furniture = await parseFurniture();
+  console.log('Meubles extraits :', furniture.length);
+  await writeFurniture(furniture);
+
+  const memories = await parseMemories();
+  console.log('Souvenirs extraits :', memories.length);
+  await writeMemories(memories);
 }
 
 await main();
