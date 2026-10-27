@@ -26,7 +26,9 @@ const PATHS = {
   x: <path d="M6 6l12 12M18 6L6 18" />,
   moon: <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />,
   sync: <><path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3" /><path d="M4 4v4h4M20 20v-4h-4" /></>,
-  shovel: <><path d="M17 3l4 4-9 9-4-4z" /><path d="M8 16l-4 4-2-2 4-4" /><path d="M14 6l3 3" /></>
+  shovel: <><path d="M17 3l4 4-9 9-4-4z" /><path d="M8 16l-4 4-2-2 4-4" /><path d="M14 6l3 3" /></>,
+  // Ajout de l'icône "clock" : pour le rôle Table de courbage temporel
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></>
 };
 
 export function Icon({ name, size = 22, fill = 'none', ...rest }) {

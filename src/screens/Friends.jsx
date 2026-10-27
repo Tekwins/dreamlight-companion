@@ -7,19 +7,21 @@ import { Icon, Thumb, Seg, Back, ExtTag, GroupTitle } from '../ui.jsx';
 
 const VILLAGER = Object.fromEntries(VILLAGERS.map((v) => [v.id, v]));
 
-// Rôles du jeu (Jardinage/Pêche/Cueillette/Extraction minière/Excavation/Chasse aux anigamis,
-// assignables à un habitant à partir du niveau d'amitié 2, via un manuel d'entraînement) : l'app
-// ne calcule pas encore les bonus associés, mais retient ici lequel est assigné à qui, pour s'y
-// retrouver. (La Table de courbage temporel, niche et liée au Rift, n'est pas encore incluse.)
+// Rôles du jeu (Jardinage/Pêche/Cueillette/Extraction minière/Excavation/Chasse aux anigamis/
+// Table de courbage temporel, assignables à un habitant à partir du niveau d'amitié 2, via un
+// manuel d'entraînement) : l'app ne calcule pas encore les bonus associés, mais retient ici
+// lequel est assigné à qui, pour s'y retrouver. Le 4e élément (ext) masque le rôle si l'extension
+// correspondante est désactivée dans les Réglages.
 const JOBS = [
   ['jardinage', 'Jardinage', 'sprout'],
   ['peche', 'Pêche', 'fish'],
   ['cueillette', 'Cueillette', 'basket'],
   ['extraction', 'Extraction minière', 'gem'],
   ['excavation', 'Excavation', 'shovel'],
-  ['anigamis', 'Chasse aux anigamis', 'paw']
+  ['anigamis', 'Chasse aux anigamis', 'paw'],
+  ['courbage', 'Table de courbage temporel', 'clock', 'rift']
 ];
-const JOB = Object.fromEntries(JOBS.map(([id, label, icon]) => [id, { label, icon }]));
+const JOB = Object.fromEntries(JOBS.map(([id, label, icon, ext]) => [id, { label, icon, ext }]));
 
 export function Friends({ selectedId }) {
   const { state, update } = useStore();
@@ -55,7 +57,9 @@ export function Friends({ selectedId }) {
   }
 
   const FriendCard = (v) => {
-    const job = v.job && JOB[v.job]; // ignore un ancien identifiant de métier qui n'existerait plus
+    const jobDef = v.job && JOB[v.job]; // ignore un ancien identifiant de métier qui n'existerait plus
+    // Masque aussi le badge si son extension a été désactivée depuis l'attribution du rôle
+    const job = jobDef && (!jobDef.ext || state.extensions[jobDef.ext]) ? jobDef : null;
     return (
       <div key={v.id} class="item" style={{ alignItems: 'center' }}>
         <a href={`#/amitie/${v.id}`} aria-label={`Voir la fiche de ${v.name}`} style={{ position: 'relative', flex: 'none' }}>
@@ -167,7 +171,7 @@ function FriendDetail({ v, embedded }) {
         <h2>Rôle</h2>
         <div class="small muted">Celui que tu lui as attribué en jeu (dès le niveau 2, avec un manuel d'entraînement). L'appli ne calcule pas encore les bonus, juste un repère pour s'y retrouver.</div>
         <div class="chips" style={{ margin: 0, padding: 0 }}>
-          {JOBS.map(([id, label, icon]) => (
+          {JOBS.filter(([, , , ext]) => !ext || state.extensions[ext]).map(([id, label, icon]) => (
             <button key={id} class={'chip' + (job === id ? ' on' : '')} aria-pressed={job === id} onClick={() => setJob(id)}>
               <Icon name={icon} size={16} />{label}
             </button>
