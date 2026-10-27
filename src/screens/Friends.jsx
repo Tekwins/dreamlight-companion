@@ -9,9 +9,8 @@ const VILLAGER = Object.fromEntries(VILLAGERS.map((v) => [v.id, v]));
 
 // Rôles du jeu (Jardinage/Pêche/Cueillette/Extraction minière/Excavation/Chasse aux anigamis/
 // Table de courbage temporel, assignables à un habitant à partir du niveau d'amitié 2, via un
-// manuel d'entraînement) : l'app ne calcule pas encore les bonus associés, mais retient ici
-// lequel est assigné à qui, pour s'y retrouver. Le 4e élément (ext) masque le rôle si l'extension
-// correspondante est désactivée dans les Réglages.
+// manuel d'entraînement). Le 4e élément (ext) masque le rôle si l'extension correspondante est
+// désactivée dans les Réglages. Voir `roleBonus()` pour le calcul du bonus de ressource associé.
 const JOBS = [
   ['jardinage', 'Jardinage', 'sprout'],
   ['peche', 'Pêche', 'fish'],
@@ -22,6 +21,27 @@ const JOBS = [
   ['courbage', 'Table de courbage temporel', 'clock', 'rift']
 ];
 const JOB = Object.fromEntries(JOBS.map(([id, label, icon, ext]) => [id, { label, icon, ext }]));
+
+const fmtPct = (n) => (Number.isInteger(n) ? n : n.toFixed(1));
+
+// Formule communautaire du wiki anglais (dreamlightvalleywiki.com/Bonuses), non confirmée
+// officiellement par Gameloft : chance de ressource bonus en te promenant avec un habitant =
+// base (20 % Jardinage, 25 % les autres rôles) + 3,5 %/niveau du compagnon actif (celui avec qui
+// tu te promènes, jusqu'à 35 % au niveau 10) + 1 %/niveau de chaque autre habitant assigné au
+// même rôle mais pas actif (jusqu'à 10 % chacun). Pas de plafond à 100 %.
+function roleBonus(jobId, villagerId, state) {
+  const base = jobId === 'jardinage' ? 20 : 25;
+  let active = 0, others = 0, othersCount = 0;
+  for (const [vid, job] of Object.entries(state.villagerJobs || {})) {
+    if (job !== jobId) continue;
+    const v = VILLAGER[vid];
+    if (!v || (v.ext && !state.extensions[v.ext])) continue; // ancien id de métier, ou extension désactivée
+    const level = Math.min(10, state.friendship[vid]?.level ?? 0);
+    if (vid === villagerId) active = level * 3.5;
+    else { others += level; othersCount++; }
+  }
+  return { total: base + active + others, base, active, others, othersCount };
+}
 
 export function Friends({ selectedId }) {
   const { state, update } = useStore();
@@ -169,7 +189,7 @@ function FriendDetail({ v, embedded }) {
 
       <section class="stack">
         <h2>Rôle</h2>
-        <div class="small muted">Celui que tu lui as attribué en jeu (dès le niveau 2, avec un manuel d'entraînement). L'appli ne calcule pas encore les bonus, juste un repère pour s'y retrouver.</div>
+        <div class="small muted">Celui que tu lui as attribué en jeu (dès le niveau 2, avec un manuel d'entraînement).</div>
         <div class="chips" style={{ margin: 0, padding: 0 }}>
           {JOBS.filter(([, , , ext]) => !ext || state.extensions[ext]).map(([id, label, icon]) => (
             <button key={id} class={'chip' + (job === id ? ' on' : '')} aria-pressed={job === id} onClick={() => setJob(id)}>
@@ -177,6 +197,17 @@ function FriendDetail({ v, embedded }) {
             </button>
           ))}
         </div>
+        {job && (() => {
+          const b = roleBonus(job, v.id, state);
+          return (
+            <div class="small muted" style={{ lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--teal)' }}>~{Math.round(b.total)} %</strong> de chance de ressource bonus en te promenant avec lui
+              {' '}({b.base} % de base + {fmtPct(b.active)} % pour son niveau {level}
+              {b.othersCount ? ` + ${fmtPct(b.others)} % pour ${b.othersCount} autre${b.othersCount > 1 ? 's' : ''} habitant${b.othersCount > 1 ? 's' : ''} sur ce rôle` : ''}).
+              {' '}Formule communautaire (wiki anglais), non confirmée par Gameloft.
+            </div>
+          );
+        })()}
       </section>
 
       {!!v.rewards.length && (
