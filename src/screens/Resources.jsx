@@ -44,7 +44,7 @@ const CONFIG = {
 export function ResourceScreen({ kind, initialQ }) {
   const cfg = CONFIG[kind];
   const { state, update } = useStore();
-  const [view, setView] = useState('list');
+  const [view, setView] = useState('biome');
   const [biome, setBiome] = useState('');
   const [sort, setSort] = useState(cfg.sorts[0][0]);
   const [sortDir, setSortDir] = useState(1);
@@ -65,7 +65,16 @@ export function ResourceScreen({ kind, initialQ }) {
   items = items.slice().sort((a, b) => sortDir * cfg.sorters[sort](a, b));
 
   let groups;
-  if (view === 'ext') {
+  if (view === 'biome') {
+    // Une section par biome présent (un objet dispo dans plusieurs biomes apparaît dans chacun),
+    // plus une section « Partout » en tête pour les objets universels (ex. l'onyx).
+    const everywhere = items.filter((it) => it.biomes[0] === '*');
+    groups = present
+      .filter((b) => !biome || b.id === biome)
+      .map((b) => ({ key: b.id, title: b.name, color: b.color, items: items.filter((it) => it.biomes.includes(b.id)) }))
+      .filter((g) => g.items.length);
+    if (everywhere.length) groups.unshift({ key: 'partout', title: 'Partout', color: 'var(--muted)', items: everywhere });
+  } else if (view === 'ext') {
     // Jeu de base d'abord, puis une section par extension active, dans l'ordre d'EXTENSIONS.
     const base = items.filter((it) => it.biomes[0] === '*' || !extOfBiomes(it.biomes));
     groups = [{ key: 'base', title: 'Jeu de base', color: 'var(--muted)', items: base }];
@@ -95,7 +104,7 @@ export function ResourceScreen({ kind, initialQ }) {
       <Back href="#/vallee" label="Vallée" />
       <div class="between">
         <h1>{cfg.title}</h1>
-        <Seg small label="Affichage" value={view} onChange={setView} options={[['list', 'Liste'], ['ext', 'Par extension']]} />
+        <Seg small label="Affichage" value={view} onChange={setView} options={[['biome', 'Par biome'], ['list', 'Liste'], ['ext', 'Par extension']]} />
       </div>
 
       {kind === 'potager' && <Plantings onPlant={() => setPlanting(true)} />}
