@@ -228,13 +228,22 @@ function parseVillagerRewards(wt) {
 // (ex. "Elégante Chaise Longue Castle"), contrairement aux noms confirmés du wiki.
 const MDV_REWARDS_FILE = RAW + '/../mdv-character-rewards.json';
 const mdvRewards = existsSync(MDV_REWARDS_FILE) ? JSON.parse(await readFile(MDV_REWARDS_FILE, 'utf8')) : {};
+// Dernier repli, après le wiki FR puis mydreamlightvalley.com : le wiki EN (noms en anglais, faute
+// de traduction disponible — Tek a demandé explicitement de compléter avec plutôt que de laisser
+// un champ vide). npm run data -- amitie-en.
+const EN_REWARDS_FILE = RAW + '/../dlv-friendship-rewards.json';
+const enRewards = existsSync(EN_REWARDS_FILE) ? JSON.parse(await readFile(EN_REWARDS_FILE, 'utf8')) : {};
 
-function withMdvFallback(name, rewards) {
-  const mdv = mdvRewards[normName(name)];
-  if (!mdv) return rewards;
+function withFallback(source, name, rewards) {
+  const fallback = source[normName(name)];
+  if (!fallback) return rewards;
   const have = new Set(rewards.map((r) => r.level));
-  const extra = mdv.filter((r) => !have.has(r.level)).map((r) => ({ ...r, todo: true }));
+  const extra = fallback.filter((r) => !have.has(r.level)).map((r) => ({ ...r, todo: true }));
   return [...rewards, ...extra].sort((a, b) => a.level - b.level);
+}
+
+function withRewardFallbacks(name, rewards) {
+  return withFallback(enRewards, name, withFallback(mdvRewards, name, rewards));
 }
 
 async function parsePersonnages() {
@@ -259,7 +268,7 @@ async function parsePersonnages() {
     const name = VILLAGER_NAME_OVERRIDE[wikiName] || wikiName;
     const file = VILLAGER_FILE_OVERRIDE[wikiName] || img[1];
     const universe = parseUniverse(cats);
-    const rewards = withMdvFallback(name, parseVillagerRewards(wt));
+    const rewards = withRewardFallbacks(name, parseVillagerRewards(wt));
     villagers.push({ id, name, file, ext, universe, rewards });
   }
   return villagers.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
@@ -270,7 +279,8 @@ async function writeVillagers(villagers) {
   lines.push('// Habitants, générés depuis le wiki Fandom francophone (Catégorie:Personnages).');
   lines.push("// ext : extension requise. universe : univers Disney/Pixar d'origine, si identifié.");
   lines.push('// rewards : récompenses débloquées à chaque palier d\'amitié (niveau, nom, type).');
-  lines.push('// todo : nom récupéré sur mydreamlightvalley.com faute de mieux (wiki FR pas documenté), à vérifier en jeu.');
+  lines.push('// todo : nom récupéré sur mydreamlightvalley.com ou le wiki EN (parfois en anglais) faute de mieux');
+  lines.push('// (wiki FR pas documenté), à vérifier en jeu.');
   lines.push('export const VILLAGERS = [');
   for (const v of villagers) {
     const entry = { id: v.id, name: v.name, file: v.file };

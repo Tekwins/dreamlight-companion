@@ -8,6 +8,7 @@
 //   npm run data -- quetes    -> relance juste les ~660 pages de quêtes (sans tout retélécharger)
 //   npm run data -- collection -> listes de catégories Meubles + page Souvenirs (pour Collection)
 //   npm run data -- amitie    -> récompenses d'amitié sur mydreamlightvalley.com (repli du wiki FR, souvent incomplet)
+//   npm run data -- amitie-en -> récompenses d'amitié sur le wiki EN, en anglais (dernier repli, après amitie)
 //
 // Les pages brutes servent ensuite à générer les fichiers de src/data
 // (recettes complètes, habitants, quêtes, succès, Voies des étoiles).
@@ -217,14 +218,21 @@ async function fetchImages() {
   // Meubles : la quasi-totalité n'est documentée que sur le wiki FR (Fandom, bloqué par
   // Cloudflare) — inutile de perdre 12s par échec dessus. mydreamlightvalley.com héberge ses
   // propres images (~3870 meubles répertoriés, bonne couverture) : on l'essaie en premier,
-  // avant même le wiki, uniquement pour les meubles.
+  // avant même le wiki, uniquement pour les meubles. En repli du nom exact, un match par jeu de
+  // tokens (mots triés) : la plupart des écarts restants sont juste un ordre des mots différent
+  // entre le wiki FR et mydreamlightvalley.com, pas un objet différent.
   const furnitureMod = await import('../src/data/furniture.js');
   const missingFurniture = furnitureMod.FURNITURE.filter((f) => !existsSync(path.join('public/img', f.file.replace(/ /g, '_'))));
   if (missingFurniture.length) {
     console.log(missingFurniture.length, "meubles sans image, on essaie mydreamlightvalley.com d'abord");
     const map = await mdvNameMap('furniture', 'furnitures', /^Meubles\s+/);
+    const tokenMap = {};
+    for (const [n, url] of Object.entries(map)) {
+      const k = tokenKey(n);
+      if (!(k in tokenMap)) tokenMap[k] = url; // en cas de collision, garde le 1er (rare)
+    }
     for (const it of missingFurniture) {
-      const url = map[normName(it.name)];
+      const url = map[normName(it.name)] || tokenMap[tokenKey(it.name)];
       if (!url) continue;
       try {
         const result = await saveImage(url, it.file);
@@ -236,8 +244,13 @@ async function fetchImages() {
       await sleep(300);
     }
   }
+  // Le reste des meubles non trouvés sur mydreamlightvalley.com n'a aucune chance sur le wiki FR
+  // (Cloudflare) ni le wiki EN (pas de nom anglais pour la plupart des meubles) : pas la peine de
+  // perdre 12s par échec dessus, contrairement aux recettes/habitants qui ont de vraies chances.
+  const furnitureFiles = new Set(furnitureMod.FURNITURE.map((f) => f.file));
 
   for (const name of files) {
+    if (furnitureFiles.has(name)) continue;
     const out = path.join('public/img', name.replace(/ /g, '_'));
     if (existsSync(out)) continue;
     try {
@@ -260,8 +273,21 @@ async function fetchImages() {
 // une page par nom français (ex. /fr/meal/ajiaco, /fr/character/aladdin).
 const MDV = 'https://www.mydreamlightvalley.com';
 
+// Les entités HTML (ex. "d&#039;œufs") doivent être décodées avant normName : sinon ses chiffres
+// ("039") survivent au nettoyage (ce sont des caractères alphanumériques) et polluent la clé,
+// cassant des correspondances par ailleurs identiques (très fréquent, le français est plein
+// d'apostrophes : "d'œufs", "l'arbre"…).
+function decodeEntities(s) {
+  return s.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+}
+
 function normName(s) {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return decodeEntities(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Mêmes mots, ordre différent (fréquent FR wiki vs mydreamlightvalley.com) : comparer les mots triés.
+function tokenKey(s) {
+  return normName(s).split(' ').filter(Boolean).sort().join(' ');
 }
 
 async function mdvSlugs(category) {
@@ -276,6 +302,11 @@ async function mdvSlugs(category) {
 // que la catégorie d'URL (ex. furniture -> furnitures) ; prefixRe : préfixe du <title> à retirer
 // avant le nom (varie selon la catégorie : "Détail: ", "Personnage: ", "Meubles ").
 async function mdvNameMap(category, imgFolder = '(?:meals|characters)', prefixRe = /^(Détail|Personnage): /) {
+  // Mise en cache sur disque (data/raw/mdv-map-<catégorie>.json) : reconstruire la table à chaque
+  // essai de matching coûte ~10 min pour les meubles (~3700 pages) ; on ne refait le fetch que si
+  // le cache n'existe pas encore.
+  const cacheFile = `data/raw/mdv-map-${category}.json`;
+  if (existsSync(cacheFile)) return JSON.parse(await readFile(cacheFile, 'utf8'));
   const slugs = await mdvSlugs(category);
   const map = {};
   for (const slug of slugs) {
@@ -289,6 +320,7 @@ async function mdvNameMap(category, imgFolder = '(?:meals|characters)', prefixRe
     } catch { /* page suivante */ }
     await sleep(120);
   }
+  await writeFile(cacheFile, JSON.stringify(map));
   return map;
 }
 
@@ -318,7 +350,7 @@ async function fetchVillagerRewardsFromMdv() {
         const end = k + 1 < positions.length ? positions[k + 1].index : seg.length;
         const chunk = seg.slice(start, end);
         const catM = chunk.match(/href="\/fr\/([a-z]+)\//);
-        let text = chunk.replace(/<[^>]+>/g, ' ').replace(/&#039;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+        let text = decodeEntities(chunk.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
         text = text.replace(/^Niveau:\s*\d+\s*/, '').trim();
         // "500 Coins" -> "500 pièces" (espace tous les 3 chiffres, comme le wiki FR).
         const coinsM = text.match(/^([\d,.]+)\s*Coins$/i);
@@ -332,6 +364,86 @@ async function fetchVillagerRewardsFromMdv() {
   }
   await writeFile('data/raw/mdv-character-rewards.json', JSON.stringify(out, null, 1));
   console.log(Object.keys(out).length, 'habitants avec récompenses MDV ->', 'data/raw/mdv-character-rewards.json');
+}
+
+// Dernier repli (après le wiki FR et mydreamlightvalley.com) pour les paliers qu'aucun des deux ne
+// documente : dreamlightvalleywiki.com (wiki EN) a une table "==Friendship Rewards==" complète par
+// personnage. Les noms restent en anglais (pas de traduction fiable disponible) — Tek a demandé
+// explicitement d'utiliser le wiki anglais tel quel plutôt que de laisser un champ vide.
+// Habitants sans nom anglais exploitable dans data/raw/frfandom (pas de nom_vo, ou nom_vo vide sur
+// le wiki) : vérifié à la main contre dreamlightvalleywiki.com (2026-10-27).
+const VILLAGER_EN_OVERRIDE = {
+  'Blanche-Neige': 'Snow White', 'Cendrillon': 'Cinderella', 'Chat de Cheshire': 'Cheshire Cat',
+  'Clochette': 'Tinker Bell', 'Cruella': 'Cruella', 'Hercule': 'Hercules', 'Maléfique': 'Maleficent',
+  'Tigrou': 'Tigger', "L'Oublié": 'The Forgotten'
+};
+const DLV_TYPE_FR = { Furniture: 'Meubles', Motif: 'Autocollants', Clothing: 'Vêtements', Material: 'Matériau', 'Dream Style': 'Styles de rêves' };
+
+function dlvLinkText(cell) {
+  const m = cell.match(/\[\[([^\]]+)\]\]/);
+  if (!m) return '';
+  const parts = m[1].split('|');
+  return parts[parts.length - 1].split('#')[0].trim();
+}
+
+function parseDlvFriendshipRewards(wt) {
+  const sec = wt.match(/==\s*Friendship Rewards\s*==([\s\S]*?)(?:\n==|$)/);
+  if (!sec) return [];
+  const rows = sec[1].split(/\n\|-/).slice(1);
+  const rewards = [];
+  let level = null;
+  for (let row of rows) {
+    row = row.replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, '').replace(/<ref[^>]*\/?>/g, '');
+    const lvlM = row.match(/Friendship_(\d+)/);
+    if (lvlM) level = +lvlM[1];
+    if (!level) continue;
+    const cells = row.split('||').map((c) => c.trim()).filter(Boolean);
+    const rest = lvlM ? cells.slice(1) : cells;
+    if (!rest.length) continue;
+    const priceM = rest.join(' ').match(/\{\{price\|(\d+)\}\}/i);
+    if (priceM) { rewards.push({ level, name: Number(priceM[1]).toLocaleString('fr-FR') + ' pièces', type: 'Monnaies' }); continue; }
+    if (rest.length < 2) continue;
+    const name = dlvLinkText(rest[rest.length - 2]);
+    const typeRaw = dlvLinkText(rest[rest.length - 1]);
+    if (name) rewards.push({ level, name, type: DLV_TYPE_FR[typeRaw] || typeRaw });
+  }
+  return rewards;
+}
+
+async function fetchVillagerRewardsFromDlv() {
+  const villagersMod = await import('../src/data/villagers.js');
+  const titleToName = {};
+  for (const v of villagersMod.VILLAGERS) {
+    let title = VILLAGER_EN_OVERRIDE[v.name];
+    if (!title) {
+      try {
+        const wt = JSON.parse(await readFile(`data/raw/frfandom/${v.name}.json`, 'utf8')).wikitext || '';
+        title = wt.match(/nom_vo\s*=\s*([^|\n}]+)/)?.[1]?.trim() || v.name;
+      } catch { title = v.name; }
+    }
+    titleToName[title] = v.name;
+  }
+  const titles = Object.keys(titleToName);
+
+  const out = {};
+  for (let i = 0; i < titles.length; i += 20) {
+    const batch = titles.slice(i, i + 20);
+    const res = await fetch(`${WIKIS.dlv.api}?action=query&prop=revisions&rvprop=content&rvslots=main&redirects=1&titles=${encodeURIComponent(batch.join('|'))}&format=json`, { headers: { 'User-Agent': UA } });
+    const data = await res.json();
+    // Les redirections (ex. Wreck-It Ralph -> Ralph) changent le titre : remonter jusqu'au nom FR d'origine.
+    const resolved = { ...titleToName };
+    for (const r of data.query?.redirects || []) if (resolved[r.from]) resolved[r.to] = resolved[r.from];
+    for (const p of Object.values(data.query?.pages || {})) {
+      const wt = p.revisions?.[0]?.slots?.main?.['*'];
+      const frName = resolved[p.title];
+      if (!wt || !frName) continue;
+      const rewards = parseDlvFriendshipRewards(wt);
+      if (rewards.length) out[normName(frName)] = rewards;
+    }
+    await sleep(500);
+  }
+  await writeFile('data/raw/dlv-friendship-rewards.json', JSON.stringify(out, null, 1));
+  console.log(Object.keys(out).length, 'habitants avec récompenses wiki EN ->', 'data/raw/dlv-friendship-rewards.json');
 }
 
 async function fetchImagesFromMdv() {
@@ -369,4 +481,11 @@ else if (mode === 'quetes') await fetchPages(TARGETS.filter((t) => t.category ==
 else if (mode === 'collection') await fetchPages(TARGETS.filter((t) => t.group === 'collection'));
 // Récompenses d'amitié depuis mydreamlightvalley.com, pour combler les trous du wiki FR : npm run data -- amitie
 else if (mode === 'amitie') await fetchVillagerRewardsFromMdv();
+else if (mode === 'amitie-en') await fetchVillagerRewardsFromDlv();
+// Construit (ou réutilise) le cache data/raw/mdv-map-furniture.json, sans télécharger d'images :
+// npm run data -- meubles-map (pour itérer sur le matching sans tout retélécharger à chaque essai)
+else if (mode === 'meubles-map') {
+  const map = await mdvNameMap('furniture', 'furnitures', /^Meubles\s+/);
+  console.log(Object.keys(map).length, 'meubles dans le cache mydreamlightvalley.com');
+}
 else await fetchPages();
