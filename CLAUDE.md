@@ -37,12 +37,24 @@ Interface et textes **en français**. Répondre à Tek en français.
   déploiement (clés VAPID, `supabase functions deploy`, planification cron) doit se faire depuis le compte Supabase
   de Tek — étapes dans `supabase/functions/daily-reminders/README.md`.
 - **Images manquantes**, toutes avec repli sur l'initiale (composant `Thumb`), pas bloquant :
-  - Meubles (`furniture.js`) et souvenirs (`memories.js`) : pas encore récupérées (voir `npm run data -- images`
-    à étendre, ou tenter mydreamlightvalley.com en repli comme pour les recettes/habitants).
-  - 26 images de recettes et ~70 images Voie des étoiles/cosmétiques : définitivement bloquées (wiki EN épuisé,
+  - Habitants et souvenirs : 100 % récupérées.
+  - Meubles (`furniture.js`) : ~365/1304 (28 %) — mydreamlightvalley.com n'a pas de page pour la plupart des
+    variantes (couleur/style). Matching déjà optimisé (voir `fetchFurnitureFromMdv()` dans `scrape-wiki.mjs` :
+    décodage d'entités HTML + repli par jeu de tokens triés) ; pas de piste automatisée supplémentaire connue.
+  - 12 images de recettes et 54 images Voie des étoiles/cosmétiques : définitivement bloquées (wiki EN épuisé,
     CDN Fandom protégé par Cloudflare) — ne pas retenter, voir les commentaires de `scripts/scrape-wiki.mjs`.
 - Historique des Voies des étoiles passées (27 voies, noms EN uniquement, pas de catégorie wiki FR) : Tek a décliné
   ce scraping une première fois — ne relancer que s'il le redemande explicitement.
+- **Récompenses d'amitié** : 147/689 proviennent de mydreamlightvalley.com ou du wiki anglais (pas du wiki FR),
+  marquées « nom à vérifier en jeu » dans `Friends.jsx`. Pas un bug, juste pas confirmé par la source officielle.
+- **Bonus de rôle des habitants** : calculé (`roleBonus()` dans `Friends.jsx`), formule communautaire du wiki
+  anglais (dreamlightvalleywiki.com/Bonuses, non confirmée par Gameloft) : base (20 % Jardinage, 25 % les autres
+  rôles) + 3,5 %/niveau du compagnon actif + 1 %/niveau de chaque autre habitant sur le même rôle.
+- **Délai de repousse des fleurs décoratives** (Cueillette) : pas encore suivi — mécanique réelle trouvée sur
+  dreamlightvalleywiki.com/Foraging#Flower_Spawning (4 paliers de rareté : 6/4/3/2 fleurs par biome → 20/30/40/60 min
+  par fleur, max 2h pour tout repousser ; le minuteur interne tourne en continu, donc seule la 1ère fleur après un
+  nettoyage complet a un délai incertain). Nécessite un nouveau jeu de données (~75 fleurs, nom FR + biome + rareté)
+  et une maquette d'interface pour le minuteur — à faire en concertation avec Tek vu l'ampleur.
 
 Maquette alignée (https://claude.ai/artifact/4SfLa7iz17AMGsGRtj8zFR) : écrans principaux, vue « Par biome »
 (Potager/Pêche/Cueillette/Mines), recherche globale détaillée, Collection (Voie étoilée/Souvenirs/Meubles).
