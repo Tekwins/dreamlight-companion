@@ -190,7 +190,7 @@ function FriendDetail({ v, embedded }) {
                   <span class="tag" style={{ flex: 'none', background: unlocked ? 'var(--teal)' : 'var(--line)', color: unlocked ? '#14123A' : 'var(--muted)' }}>Niv. {r.level}</span>
                   <div class="stack" style={{ gap: '2px', flex: 1 }}>
                     <span style={{ fontWeight: 800, opacity: unlocked ? 1 : 0.6 }}>{r.name}</span>
-                    <span class="small muted">{r.type}</span>
+                    <span class="small muted">{[r.type, r.todo && 'nom à vérifier en jeu'].filter(Boolean).join(' · ')}</span>
                   </div>
                   {unlocked && <Icon name="check" size={18} style={{ color: 'var(--teal)', flex: 'none' }} />}
                 </div>

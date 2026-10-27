@@ -7,6 +7,7 @@
 //   npm run data -- images    -> images dans public/img/ (pour ne plus dépendre du wiki)
 //   npm run data -- quetes    -> relance juste les ~660 pages de quêtes (sans tout retélécharger)
 //   npm run data -- collection -> listes de catégories Meubles + page Souvenirs (pour Collection)
+//   npm run data -- amitie    -> récompenses d'amitié sur mydreamlightvalley.com (repli du wiki FR, souvent incomplet)
 //
 // Les pages brutes servent ensuite à générer les fichiers de src/data
 // (recettes complètes, habitants, quêtes, succès, Voies des étoiles).
@@ -291,6 +292,48 @@ async function mdvNameMap(category, imgFolder = '(?:meals|characters)', prefixRe
   return map;
 }
 
+// Parcours de récompenses par habitant, en repli du wiki FR (souvent incomplet : liens [[]] vides
+// pour les paliers pas encore documentés). mydreamlightvalley.com affiche les 10 paliers pour la
+// plupart des habitants ; on les mémorise ici pour que build-data.mjs comble les trous du wiki.
+// Catégorie MDV de la récompense (déduite du lien) -> type affiché dans l'appli.
+const MDV_REWARD_TYPE = { furniture: 'Meubles', motif: 'Autocollants', clothing: 'Vêtements' };
+
+async function fetchVillagerRewardsFromMdv() {
+  const slugs = await mdvSlugs('character');
+  const out = {};
+  for (const slug of slugs) {
+    try {
+      const res = await fetch(`${MDV}/fr/character/${slug}`, { headers: { 'User-Agent': UA } });
+      const html = await res.text();
+      const titleM = html.match(/<title>([^<]*)<\/title>/);
+      const name = titleM?.[1]?.replace(/ - My Dreamlight Valley$/, '').replace(/^Personnage: /, '').trim();
+      const i = html.indexOf('Récompense');
+      if (!name || i === -1) continue;
+      const j = html.indexOf('<!--', i);
+      const seg = html.slice(i, j > -1 ? j : i + 6000);
+      const positions = [...seg.matchAll(/Niveau:\s*(\d+)/g)];
+      const rewards = [];
+      for (let k = 0; k < positions.length; k++) {
+        const start = positions[k].index;
+        const end = k + 1 < positions.length ? positions[k + 1].index : seg.length;
+        const chunk = seg.slice(start, end);
+        const catM = chunk.match(/href="\/fr\/([a-z]+)\//);
+        let text = chunk.replace(/<[^>]+>/g, ' ').replace(/&#039;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+        text = text.replace(/^Niveau:\s*\d+\s*/, '').trim();
+        // "500 Coins" -> "500 pièces" (espace tous les 3 chiffres, comme le wiki FR).
+        const coinsM = text.match(/^([\d,.]+)\s*Coins$/i);
+        const name2 = coinsM ? Number(coinsM[1].replace(/[,.]/g, '')).toLocaleString('fr-FR') + ' pièces' : text;
+        const type = coinsM ? 'Monnaies' : (MDV_REWARD_TYPE[catM?.[1]] || '');
+        if (name2) rewards.push({ level: +positions[k][1], name: name2, type });
+      }
+      if (rewards.length) out[normName(name)] = rewards;
+    } catch { /* page suivante */ }
+    await sleep(120);
+  }
+  await writeFile('data/raw/mdv-character-rewards.json', JSON.stringify(out, null, 1));
+  console.log(Object.keys(out).length, 'habitants avec récompenses MDV ->', 'data/raw/mdv-character-rewards.json');
+}
+
 async function fetchImagesFromMdv() {
   const recipesMod = await import('../src/data/recipes.js');
   const villagersMod = await import('../src/data/villagers.js');
@@ -324,4 +367,6 @@ if (mode === 'images') await fetchImages();
 else if (mode === 'quetes') await fetchPages(TARGETS.filter((t) => t.category === 'Quêtes'));
 // Meubles (listes de catégories) + Souvenirs (page Memories) : npm run data -- collection
 else if (mode === 'collection') await fetchPages(TARGETS.filter((t) => t.group === 'collection'));
+// Récompenses d'amitié depuis mydreamlightvalley.com, pour combler les trous du wiki FR : npm run data -- amitie
+else if (mode === 'amitie') await fetchVillagerRewardsFromMdv();
 else await fetchPages();
