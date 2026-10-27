@@ -8,6 +8,11 @@
 const A = 'A', M = 'M', S = 'S', _ = '-';
 const every = (v) => [v, v, v, v, v, v, v];
 
+// tame : { min, exact } = nombre de repas (premier repas du jour seulement) pour apprivoiser,
+// trouvé sur le wiki EN (« Minimum Feedings »). exact: false = minimum seulement, le jeu peut
+// en demander plus au hasard au-delà. Absent = non documenté sur le wiki (singes, hiboux,
+// bébés dragons, pégases) : pas de barre segmentée pour ces espèces, juste le compteur.
+
 // steps : décomposé en étapes numérotées dans la fiche animal (1 seule étape = pas de numéro affiché).
 export const METHODS = {
   none: { label: 'Aucun jeu', steps: ['Approche-toi simplement et donne-lui à manger.'] },
@@ -19,6 +24,7 @@ export const METHODS = {
 export const SPECIES = [
   {
     id: 'ecureuil', name: 'Écureuils', biome: 'esplanade', method: 'none',
+    tame: { min: 2, exact: true },
     fav: 'Cacahuète', liked: 'Fruits des buissons et des arbres',
     rewards: { fav: 'Éclat de rêve, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Origan ×3' },
     variants: [
@@ -31,6 +37,7 @@ export const SPECIES = [
   },
   {
     id: 'lievre', name: 'Lièvres', biome: 'prairie', method: 'chase',
+    tame: { min: 2, exact: true },
     fav: 'Carotte', liked: 'Céréales, épices et herbes, légumes, fruits issus de graines',
     rewards: { fav: 'Éclat de rêve, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Graines de laitue ×4' },
     variants: [
@@ -43,6 +50,7 @@ export const SPECIES = [
   },
   {
     id: 'tortue', name: 'Tortues de mer', biome: 'plage', method: 'patience',
+    tame: { min: 3, exact: false },
     fav: 'Algue', liked: 'Fruits de mer',
     tip: 'Tu peux aussi poser une algue devant elle : elle sort tout de suite.',
     rewards: { fav: 'Éclat de rêve, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Noix de coco ×2' },
@@ -56,6 +64,7 @@ export const SPECIES = [
   },
   {
     id: 'raton', name: 'Ratons laveurs', biome: 'foret', method: 'redlight',
+    tame: { min: 3, exact: false },
     fav: 'Myrtille', liked: 'Groseille à maquereau, Framboise, Fraise',
     rewards: { fav: 'Éclat de rêve, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Ail ×2' },
     variants: [
@@ -68,6 +77,7 @@ export const SPECIES = [
   },
   {
     id: 'crocodile', name: 'Crocodiles', biome: 'bayou', method: 'redlight',
+    tame: { min: 4, exact: false },
     fav: 'Homard', liked: 'Poissons et fruits de mer du Bayou',
     rewards: { fav: 'Éclat de rêve ×2, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Graines de concombre' },
     variants: [
@@ -81,6 +91,7 @@ export const SPECIES = [
   },
   {
     id: 'passereau', name: 'Passereaux', biome: 'plateau', method: 'none',
+    tame: { min: 4, exact: false },
     fav: 'Fleurs (selon la couleur)', liked: 'Toutes les autres fleurs',
     rewards: { fav: 'Éclat de rêve ×2, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Fève de cacao, Cerise ou Cristal' },
     variants: [
@@ -93,6 +104,7 @@ export const SPECIES = [
   },
   {
     id: 'renard', name: 'Renards', biome: 'hauteurs', method: 'chase',
+    tame: { min: 5, exact: false },
     fav: 'Esturgeon blanc', liked: 'Poissons et fruits de mer des Hauteurs',
     rewards: { fav: 'Éclat de rêve ×2, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Lingot de fer' },
     variants: [
@@ -105,6 +117,7 @@ export const SPECIES = [
   },
   {
     id: 'corbeau', name: 'Corbeaux', biome: 'terres', method: 'patience',
+    tame: { min: 5, exact: false },
     fav: 'Plats 5 étoiles', liked: 'Plats 3 et 4 étoiles',
     tip: 'Attends qu’il ait fini de tourner au-dessus de ta tête.',
     rewards: { fav: 'Éclat de rêve ×3, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Lingot d’or' },
@@ -118,6 +131,7 @@ export const SPECIES = [
   },
   {
     id: 'capybara', name: 'Capybaras', biome: 'meandres', method: 'none',
+    tame: { min: 3, exact: true },
     fav: 'Chou', liked: 'Céréales, épices et herbes, légumes, fruits issus de graines',
     rewards: { fav: 'Éclat de rêve ×2, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Bambou ×3' },
     variants: [
@@ -131,6 +145,7 @@ export const SPECIES = [
   },
   {
     id: 'cobra', name: 'Cobras', biome: 'dunes', method: 'redlight',
+    tame: { min: 3, exact: true },
     fav: 'Œuf', liked: 'Produits laitiers et huiles',
     rewards: { fav: 'Éclat de rêve ×2, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Agave ×3' },
     variants: [
@@ -193,6 +208,7 @@ export const SPECIES = [
   },
   {
     id: 'oie', name: 'Oies', biome: 'alpes', method: 'patience',
+    tame: { min: 1, exact: true },
     fav: 'Groseille rouge', liked: 'Myrtille, Groseille à maquereau, Framboise, Fraise',
     tip: 'Elles sont craintives et se cachent : attends qu’elles ressortent.',
     rewards: { fav: 'Éclat de rêve ×2, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Graines de blé' },
@@ -206,6 +222,7 @@ export const SPECIES = [
   },
   {
     id: 'mouffette', name: 'Mouffettes', biome: 'gulch', method: 'redlight',
+    tame: { min: 2, exact: true },
     fav: 'Champignon de Paris, Pêche à aiguilles', liked: 'Fromage, Œuf, Fruits, Légumes',
     rewards: { fav: 'Éclat de rêve ×2, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Graines de carotte' },
     variants: [
@@ -217,6 +234,7 @@ export const SPECIES = [
   },
   {
     id: 'abeille', name: 'Abeilles', biome: 'pixie', method: 'chase',
+    tame: { min: 3, exact: true },
     fav: 'Corail de miel', liked: 'Toutes les fleurs',
     rewards: { fav: 'Éclat de rêve ×2, Éclat de souvenir, Sac de motifs', liked: 'Éclat de rêve, Éclat de souvenir, Graines d’épinard' },
     variants: [

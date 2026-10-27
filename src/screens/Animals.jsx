@@ -183,8 +183,17 @@ export function AnimalDetail({ v, embedded }) {
       <section class="card stack" style={{ gap: '12px' }}>
         <div class="between">
           <h2>Apprivoisement</h2>
-          <span style={{ fontWeight: 800, color: 'var(--accent)' }}>{feed.count} repas</span>
+          {sp.tame
+            ? <span style={{ fontWeight: 800, color: 'var(--accent)' }}>{feed.count} / {sp.tame.min}{sp.tame.exact ? '' : '+'} repas</span>
+            : <span style={{ fontWeight: 800, color: 'var(--accent)' }}>{feed.count} repas</span>}
         </div>
+        {sp.tame && (
+          <div class="row" style={{ gap: '6px' }}>
+            {Array.from({ length: sp.tame.min }, (_, i) => (
+              <div key={i} style={{ flex: 1, height: '10px', borderRadius: '99px', background: i < feed.count ? 'var(--accent)' : 'var(--line)' }} />
+            ))}
+          </div>
+        )}
         <div class="grid-2">
           <button class={'btn' + (feed.fedToday ? ' ok' : '')} onClick={feedToday}>
             {feed.fedToday ? <><Icon name="check" size={18} />Nourri aujourd'hui</> : 'Je l’ai nourri'}
@@ -193,7 +202,12 @@ export function AnimalDetail({ v, embedded }) {
             {tamed ? <><Icon name="check" size={18} />Apprivoisé</> : 'Apprivoisé ?'}
           </button>
         </div>
-        <div class="small muted">Seul le premier repas de la journée compte. Il en faut au moins deux, souvent plus.</div>
+        <div class="small muted">
+          Seul le premier repas de la journée compte.{' '}
+          {sp.tame
+            ? (sp.tame.exact ? '' : 'Le jeu peut en demander plus, au hasard, au-delà du minimum.')
+            : 'Il en faut au moins deux, souvent plus.'}
+        </div>
       </section>
 
       <section class="stack">
