@@ -210,40 +210,43 @@ async function saveImage(url, name, tries = 3) {
   return '429 persistant';
 }
 
+// Meubles : la quasi-totalité n'est documentée que sur le wiki FR (Fandom, bloqué par
+// Cloudflare) — inutile de perdre 12s par échec dessus. mydreamlightvalley.com héberge ses
+// propres images (~3870 meubles répertoriés, bonne couverture) : on l'essaie en premier,
+// avant même le wiki, uniquement pour les meubles. En repli du nom exact, un match par jeu de
+// tokens (mots triés) : la plupart des écarts restants sont juste un ordre des mots différent
+// entre le wiki FR et mydreamlightvalley.com, pas un objet différent.
+async function fetchFurnitureFromMdv(furnitureMod) {
+  const missingFurniture = furnitureMod.FURNITURE.filter((f) => !existsSync(path.join('public/img', f.file.replace(/ /g, '_'))));
+  if (!missingFurniture.length) return;
+  console.log(missingFurniture.length, "meubles sans image, on essaie mydreamlightvalley.com d'abord");
+  const map = await mdvNameMap('furniture', 'furnitures', /^Meubles\s+/);
+  const tokenMap = {};
+  for (const [n, url] of Object.entries(map)) {
+    const k = tokenKey(n);
+    if (!(k in tokenMap)) tokenMap[k] = url; // en cas de collision, garde le 1er (rare)
+  }
+  for (const it of missingFurniture) {
+    const url = map[normName(it.name)] || tokenMap[tokenKey(it.name)];
+    if (!url) continue;
+    try {
+      const result = await saveImage(url, it.file);
+      if (result === 'ok') console.log('  ok (mdv)', it.file);
+      else console.warn('  ?? (mdv)', it.file, '-', result);
+    } catch (e) {
+      console.warn('  !! (mdv)', it.file, '-', e.message);
+    }
+    await sleep(300);
+  }
+}
+
 async function fetchImages() {
   await mkdir('public/img', { recursive: true });
   const files = await referencedImages();
   console.log(files.length, 'images à récupérer');
 
-  // Meubles : la quasi-totalité n'est documentée que sur le wiki FR (Fandom, bloqué par
-  // Cloudflare) — inutile de perdre 12s par échec dessus. mydreamlightvalley.com héberge ses
-  // propres images (~3870 meubles répertoriés, bonne couverture) : on l'essaie en premier,
-  // avant même le wiki, uniquement pour les meubles. En repli du nom exact, un match par jeu de
-  // tokens (mots triés) : la plupart des écarts restants sont juste un ordre des mots différent
-  // entre le wiki FR et mydreamlightvalley.com, pas un objet différent.
   const furnitureMod = await import('../src/data/furniture.js');
-  const missingFurniture = furnitureMod.FURNITURE.filter((f) => !existsSync(path.join('public/img', f.file.replace(/ /g, '_'))));
-  if (missingFurniture.length) {
-    console.log(missingFurniture.length, "meubles sans image, on essaie mydreamlightvalley.com d'abord");
-    const map = await mdvNameMap('furniture', 'furnitures', /^Meubles\s+/);
-    const tokenMap = {};
-    for (const [n, url] of Object.entries(map)) {
-      const k = tokenKey(n);
-      if (!(k in tokenMap)) tokenMap[k] = url; // en cas de collision, garde le 1er (rare)
-    }
-    for (const it of missingFurniture) {
-      const url = map[normName(it.name)] || tokenMap[tokenKey(it.name)];
-      if (!url) continue;
-      try {
-        const result = await saveImage(url, it.file);
-        if (result === 'ok') console.log('  ok (mdv)', it.file);
-        else console.warn('  ?? (mdv)', it.file, '-', result);
-      } catch (e) {
-        console.warn('  !! (mdv)', it.file, '-', e.message);
-      }
-      await sleep(300);
-    }
-  }
+  await fetchFurnitureFromMdv(furnitureMod);
   // Le reste des meubles non trouvés sur mydreamlightvalley.com n'a aucune chance sur le wiki FR
   // (Cloudflare) ni le wiki EN (pas de nom anglais pour la plupart des meubles) : pas la peine de
   // perdre 12s par échec dessus, contrairement aux recettes/habitants qui ont de vraies chances.
@@ -487,5 +490,13 @@ else if (mode === 'amitie-en') await fetchVillagerRewardsFromDlv();
 else if (mode === 'meubles-map') {
   const map = await mdvNameMap('furniture', 'furnitures', /^Meubles\s+/);
   console.log(Object.keys(map).length, 'meubles dans le cache mydreamlightvalley.com');
+}
+// Repasse juste les repli mydreamlightvalley.com (meubles + recettes/habitants), sans la lente
+// boucle du wiki FR : utile après une correction de nom de fichier (ex. caractères interdits
+// sous Windows) pour rattraper quelques images précises sans tout retélécharger.
+else if (mode === 'images-mdv') {
+  await mkdir('public/img', { recursive: true });
+  await fetchFurnitureFromMdv(await import('../src/data/furniture.js'));
+  await fetchImagesFromMdv();
 }
 else await fetchPages();

@@ -25,7 +25,7 @@ export const RECIPES = [
   ['Beignets', 'Beignets.png', 'D', 4, 912, 524, ['Colza', 'Blé', 'Œuf', 'Canne à sucre'], true],
   ['Bento amical', 'Bento amical.png', 'P', 4, 3877, 2700, ['Poisson tigré', 'Chou frisé écarlate', 'Corail de miel', 'Légume'], false, 'ranch'],
   ['Biryani', 'Biryani.png', 'P', 5, 1468, 1000, ['Volaille', 'Riz', 'Cannelle', 'Cumin', 'Menthe'], false, 'rift'],
-  ['Biscuit "Mon héros"', 'Biscuit "Mon héros".png', 'D', 3, 679, 294, ['Blé', 'Beurre', 'Sucrerie'], true],
+  ['Biscuit "Mon héros"', 'Biscuit Mon héros.png', 'D', 3, 679, 294, ['Blé', 'Beurre', 'Sucrerie'], true],
   ['Biscuits', 'Biscuits.png', 'D', 5, 679, 294, ['Blé', 'Canne à sucre', 'Beurre'], true],
   ['Biscuits à la canelle', 'Biscuits à la canelle.png', 'D', 4, 1037, 256, ['Blé', 'Yaourt', 'Cannelle', 'Sucrerie'], true, 'vale'],
   ['Biscuits à la foudre', 'Biscuits à la foudre.png', 'D', 4, 1009, 308, ['Blé', 'Yaourt', 'Épice foudroyante', 'Sucrerie'], true, 'vale'],

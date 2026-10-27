@@ -23,6 +23,12 @@ function normName(s) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+// Certains noms d'objets contiennent des caractères interdits dans un nom de fichier Windows
+// (ex. Biscuit "Mon héros", 4*Town) : on les retire pour que l'image puisse être écrite sur disque.
+function fileName(s) {
+  return s.replace(/["<>:|?*]/g, '').replace(/\s+/g, ' ').trim();
+}
+
 // Catégories d'extension telles que taguées en fin de page sur le wiki FR. Quelques pages ont des
 // coquilles (ex. « The Storybook Valey », « A Rift in Time » sans le suffixe) : on les reconnaît
 // aussi, plutôt que de laisser l'habitant/la quête retomber à tort en "jeu de base".
@@ -87,7 +93,7 @@ async function parsePlats() {
 
     recipes.push({
       name: raw.title,
-      file: img ? img[1] : raw.title + '.png',
+      file: img ? fileName(img[1]) : fileName(raw.title) + '.png',
       type,
       stars: etoile[1].length,
       energy: num(energy[1]),
@@ -516,7 +522,7 @@ async function parseFurniture() {
     }
   }
   return [...byName.entries()]
-    .map(([name, cats]) => ({ id: 'meuble-' + slug(name), name, file: name + '.png', cats: [...cats] }))
+    .map(([name, cats]) => ({ id: 'meuble-' + slug(name), name, file: fileName(name) + '.png', cats: [...cats] }))
     .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
 }
 
