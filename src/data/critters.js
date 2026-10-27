@@ -8,11 +8,12 @@
 const A = 'A', M = 'M', S = 'S', _ = '-';
 const every = (v) => [v, v, v, v, v, v, v];
 
+// steps : décomposé en étapes numérotées dans la fiche animal (1 seule étape = pas de numéro affiché).
 export const METHODS = {
-  none: { label: 'Aucun jeu', text: 'Approche-toi simplement et donne-lui à manger.' },
-  chase: { label: 'Poursuite', text: 'Quand il te remarque, suis-le jusqu’à ce qu’il s’arrête, puis donne-lui à manger.' },
-  redlight: { label: 'Feu rouge, feu vert', text: 'Avance quand il est détendu, tête baissée. Quand il relève la tête, ne bouge plus, sinon il change d’endroit.' },
-  patience: { label: 'Patience', text: 'Attends qu’il soit prêt (qu’il sorte de sa cachette ou finisse sa ronde), puis donne-lui à manger.' }
+  none: { label: 'Aucun jeu', steps: ['Approche-toi simplement et donne-lui à manger.'] },
+  chase: { label: 'Poursuite', steps: ['Quand il te remarque, suis-le jusqu’à ce qu’il s’arrête.', 'Donne-lui à manger.'] },
+  redlight: { label: 'Feu rouge, feu vert', steps: ['Avance quand il est détendu, tête baissée.', 'Quand il relève la tête, ne bouge plus, sinon il change d’endroit.', 'Une fois à côté de lui, donne-lui à manger.'] },
+  patience: { label: 'Patience', steps: ['Attends qu’il soit prêt (qu’il sorte de sa cachette ou finisse sa ronde).', 'Donne-lui à manger.'] }
 };
 
 export const SPECIES = [

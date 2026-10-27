@@ -200,7 +200,16 @@ export function AnimalDetail({ v, embedded }) {
         <h2>Comment l'approcher</h2>
         <div class="card stack">
           <strong style={{ color: 'var(--warn)' }}>{METHODS[sp.method].label}</strong>
-          <span style={{ lineHeight: 1.45 }}>{METHODS[sp.method].text}</span>
+          {METHODS[sp.method].steps.length > 1 ? (
+            <ol class="stack" style={{ gap: '10px', margin: 0, padding: 0, listStyle: 'none' }}>
+              {METHODS[sp.method].steps.map((step, i) => (
+                <li key={i} class="row" style={{ gap: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ flex: 'none', width: '24px', height: '24px', borderRadius: '50%', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '12px' }}>{i + 1}</span>
+                  <span style={{ lineHeight: 1.45 }}>{step}</span>
+                </li>
+              ))}
+            </ol>
+          ) : <span style={{ lineHeight: 1.45 }}>{METHODS[sp.method].steps[0]}</span>}
           {sp.tip && <span class="small muted">{sp.tip}</span>}
         </div>
       </section>
