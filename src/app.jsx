@@ -35,7 +35,9 @@ function screenFor(route) {
     case undefined: return <Home />;
     case 'animaux': return <Animals selectedId={second} />;
     case 'vallee': return <Valley />;
-    case 'potager': case 'peche': case 'cueillette': case 'mines': return <ResourceScreen kind={first} initialQ={route.query.get('q') || ''} />;
+    // key={first} : force un remontage en changeant d'écran, pour réinitialiser le tri
+    // (sinon un ID de tri invalide pour le nouvel écran, ex. "profit" venant du Potager, fait planter la page)
+    case 'potager': case 'peche': case 'cueillette': case 'mines': return <ResourceScreen key={first} kind={first} initialQ={route.query.get('q') || ''} />;
     case 'recettes': return <Recipes selectedId={second} />;
     case 'garde-manger': return <Pantry />;
     case 'courses': return <Shopping />;

@@ -22,6 +22,7 @@ export function Recipes({ selectedId }) {
   const [type, setType] = useState('all');
   const [star, setStar] = useState(0);
   const [sort, setSort] = useState('name');
+  const [sortDir, setSortDir] = useState(1);
   const [q, setQ] = useState('');
   const [favOnly, setFavOnly] = useState(false);
 
@@ -34,11 +35,10 @@ export function Recipes({ selectedId }) {
   if (favOnly) list = list.filter((r) => state.favorites[r.id]);
   if (q) list = list.filter((r) => norm(r.name + ' ' + r.ingredients.join(' ')).includes(norm(q)));
   const byName = (a, b) => a.name.localeCompare(b.name, 'fr');
-  list = list.slice().sort(
-    sort === 'stars' ? (a, b) => b.stars - a.stars || byName(a, b)
-      : sort === 'ing' ? (a, b) => a.ingredients.length - b.ingredients.length || byName(a, b)
-        : byName
-  );
+  const cmp = sort === 'stars' ? (a, b) => b.stars - a.stars || byName(a, b)
+    : sort === 'ing' ? (a, b) => a.ingredients.length - b.ingredients.length || byName(a, b)
+      : byName;
+  list = list.slice().sort((a, b) => sortDir * cmp(a, b));
 
   const listView = (
     <div class="list">
@@ -83,10 +83,16 @@ export function Recipes({ selectedId }) {
       </div>
       <div class="between wrap">
         <span class="small muted" style={{ fontWeight: 700 }}>{list.length} recette{list.length > 1 ? 's' : ''}</span>
-        <div class="row wrap" style={{ gap: '4px' }}>
+        <div class="row wrap" style={{ gap: '4px', alignItems: 'center' }}>
           <span class="small muted" style={{ fontWeight: 700 }}>Trier :</span>
           {[['name', 'Nom'], ['stars', '★'], ['ing', 'Ingrédients']].map(([id, l]) => (
-            <button key={id} class={'chip' + (sort === id ? ' on' : '')} style={{ minHeight: '32px', fontSize: '12px' }} aria-pressed={sort === id} onClick={() => setSort(id)}>{l}</button>
+            <button key={id} class={'chip' + (sort === id ? ' on' : '')} style={{ minHeight: '32px', fontSize: '12px' }} aria-pressed={sort === id}
+              onClick={() => {
+                if (sort === id) setSortDir((d) => -d);
+                else { setSort(id); setSortDir(1); }
+              }}>
+              {l}{sort === id ? (sortDir === 1 ? ' ↑' : ' ↓') : ''}
+            </button>
           ))}
         </div>
       </div>

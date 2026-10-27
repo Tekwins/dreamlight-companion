@@ -47,6 +47,7 @@ export function ResourceScreen({ kind, initialQ }) {
   const [view, setView] = useState('list');
   const [biome, setBiome] = useState('');
   const [sort, setSort] = useState(cfg.sorts[0][0]);
+  const [sortDir, setSortDir] = useState(1);
   const [ripple, setRipple] = useState('all');
   const [cat, setCat] = useState('all');
   const [q, setQ] = useState(initialQ || '');
@@ -61,7 +62,7 @@ export function ResourceScreen({ kind, initialQ }) {
   if (kind === 'peche' && ripple !== 'all') items = items.filter((it) => it.ripple === ripple);
   if (kind === 'cueillette' && cat !== 'all') items = items.filter((it) => it.cat === cat);
   if (q) items = items.filter((it) => norm(it.name).includes(norm(q)));
-  items = items.slice().sort(cfg.sorters[sort]);
+  items = items.slice().sort((a, b) => sortDir * cfg.sorters[sort](a, b));
 
   let groups;
   if (view === 'ext') {
@@ -133,7 +134,13 @@ export function ResourceScreen({ kind, initialQ }) {
         <div class="row wrap" style={{ gap: '4px' }}>
           <span class="small muted" style={{ fontWeight: 700 }}>Trier :</span>
           {cfg.sorts.map(([id, label]) => (
-            <button key={id} class={'chip' + (sort === id ? ' on' : '')} style={{ minHeight: '32px', fontSize: '12px' }} aria-pressed={sort === id} onClick={() => setSort(id)}>{label}</button>
+            <button key={id} class={'chip' + (sort === id ? ' on' : '')} style={{ minHeight: '32px', fontSize: '12px' }} aria-pressed={sort === id}
+              onClick={() => {
+                if (sort === id) setSortDir((d) => -d);
+                else { setSort(id); setSortDir(1); }
+              }}>
+              {label}{sort === id ? (sortDir === 1 ? ' ↑' : ' ↓') : ''}
+            </button>
           ))}
         </div>
       </div>
