@@ -12,8 +12,13 @@ Interface et textes **en français**. Répondre à Tek en français.
   La clé anon dans `src/lib/supabase.js` est publique par conception ; ne jamais committer la clé service_role.
 
 ## Organisation
-- `src/data/` : données du jeu (biomes, animaux + horaires, cultures, poissons, gemmes, cueillette, recettes, habitants).
+- `src/data/` : données du jeu (biomes, animaux + horaires, cultures, poissons, gemmes, cueillette, recettes, habitants,
+  succès, Voie des étoiles, quêtes, meubles, souvenirs). La plupart sont générées par `scripts/build-data.mjs` depuis
+  `data/raw/` (pages du wiki récupérées par `scripts/scrape-wiki.mjs`, voir ses commentaires d'en-tête pour les modes :
+  tout, `images`, `quetes`, `collection`) ; `resources.js` et `critters.js` restent à la main.
   Biomes référencés par identifiant (`BIOMES` dans `biomes.js`) ; chaque biome porte son extension (`rift`, `vale`, `ranch`).
+  `furniture.js` : les 23 vraies catégories du jeu (pas une simplification), un meuble peut en avoir plusieurs.
+  `memories.js` : souvenirs groupés par univers Disney/Pixar, numérotés (pas de nom individuel dans le jeu).
 - `src/lib/store.js` : progression personnelle (localStorage par compte + synchro Supabase, la version la plus récente gagne).
   Toute nouvelle donnée perso va dans `DEFAULT_STATE`.
 - `src/lib/time.js` : disponibilité des animaux (heure locale de l'appareil, comme le jeu).
@@ -27,13 +32,20 @@ Interface et textes **en français**. Répondre à Tek en français.
 - Images : `public/img/<Fichier_wiki>.png` d'abord, puis le wiki, puis l'initiale (composant `Thumb`).
 - Noms français officiels du jeu. Ceux non confirmés portent `todo: true` dans les données.
 
-## Reste à faire (priorités)
-1. Lancer `npm run data` (ici, sur la machine de Tek : ses wikis sont accessibles) puis générer depuis `data/raw/`
-   les recettes complètes (avec énergie et prix), les habitants, les quêtes, les succès et la Voie des étoiles en cours.
-2. `npm run data -- images` pour embarquer les images dans `public/img/`.
-3. Vérifier les noms français marqués `todo` (poissons, gemmes, fruits d'extension, biomes de Wishblossom Ranch).
-4. Recherche globale (maquette faite), écran Collection, notifications push (Android + iPhone installé sur l'écran d'accueil).
-5. Aligner la maquette : https://claude.ai/artifact/4SfLa7iz17AMGsGRtj8zFR
+## Reste à faire
+- **Notifications push** : tout est codé (client `src/lib/push.js` + fonction Supabase `daily-reminders`), mais le
+  déploiement (clés VAPID, `supabase functions deploy`, planification cron) doit se faire depuis le compte Supabase
+  de Tek — étapes dans `supabase/functions/daily-reminders/README.md`.
+- **Images manquantes**, toutes avec repli sur l'initiale (composant `Thumb`), pas bloquant :
+  - Meubles (`furniture.js`) et souvenirs (`memories.js`) : pas encore récupérées (voir `npm run data -- images`
+    à étendre, ou tenter mydreamlightvalley.com en repli comme pour les recettes/habitants).
+  - 26 images de recettes et ~70 images Voie des étoiles/cosmétiques : définitivement bloquées (wiki EN épuisé,
+    CDN Fandom protégé par Cloudflare) — ne pas retenter, voir les commentaires de `scripts/scrape-wiki.mjs`.
+- Historique des Voies des étoiles passées (27 voies, noms EN uniquement, pas de catégorie wiki FR) : Tek a décliné
+  ce scraping une première fois — ne relancer que s'il le redemande explicitement.
+
+Maquette alignée (https://claude.ai/artifact/4SfLa7iz17AMGsGRtj8zFR) : écrans principaux, vue « Par biome »
+(Potager/Pêche/Cueillette/Mines), recherche globale détaillée, Collection (Voie étoilée/Souvenirs/Meubles).
 
 ## Commandes
 ```bash
