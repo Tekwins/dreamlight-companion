@@ -7,15 +7,17 @@ import { Icon, Thumb, Seg, Back, ExtTag, GroupTitle } from '../ui.jsx';
 
 const VILLAGER = Object.fromEntries(VILLAGERS.map((v) => [v.id, v]));
 
-// Rôles du jeu (Jardinage/Pêche/Cueillette/Extraction minière/Excavation, assignables à un
-// habitant à partir du niveau d'amitié 2, via un manuel d'entraînement) : l'app ne calcule pas
-// encore les bonus associés, mais retient ici lequel est assigné à qui, pour s'y retrouver.
+// Rôles du jeu (Jardinage/Pêche/Cueillette/Extraction minière/Excavation/Chasse aux anigamis,
+// assignables à un habitant à partir du niveau d'amitié 2, via un manuel d'entraînement) : l'app
+// ne calcule pas encore les bonus associés, mais retient ici lequel est assigné à qui, pour s'y
+// retrouver. (La Table de courbage temporel, niche et liée au Rift, n'est pas encore incluse.)
 const JOBS = [
   ['jardinage', 'Jardinage', 'sprout'],
   ['peche', 'Pêche', 'fish'],
   ['cueillette', 'Cueillette', 'basket'],
   ['extraction', 'Extraction minière', 'gem'],
-  ['excavation', 'Excavation', 'shovel']
+  ['excavation', 'Excavation', 'shovel'],
+  ['anigamis', 'Chasse aux anigamis', 'paw']
 ];
 const JOB = Object.fromEntries(JOBS.map(([id, label, icon]) => [id, { label, icon }]));
 
