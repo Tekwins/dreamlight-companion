@@ -19,7 +19,7 @@ export function Valley() {
     ['#/peche', 'Pêche', 'Par biome et remous', 'fish', '#7DB4F5'],
     ['#/cueillette', 'Cueillette', 'Fruits, épices, champignons', 'basket', '#F49AC1'],
     ['#/mines', 'Mines', 'Gemmes par biome', 'gem', '#C3B6F7'],
-    ['#/collection', 'Collection', 'Récompenses de Voie des étoiles', 'star', '#F5C95C'],
+    ['#/collection', 'Collection', 'Voie des étoiles, souvenirs, meubles', 'star', '#F5C95C'],
     ['#/courses', 'Liste de courses', `${shopping} objet(s) à trouver`, 'list', '#B8E07A']
   ];
 

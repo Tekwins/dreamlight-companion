@@ -6,6 +6,14 @@ import { registerRoute } from 'workbox-routing';
 import { CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
+import { clientsClaim } from 'workbox-core';
+
+// Service worker écrit à la main : contrairement au mode généré automatiquement, rien n'active
+// une mise à jour toute seule par défaut. Sans ça, une appli déjà installée (surtout sur mobile,
+// où elle reste souvent ouverte en arrière-plan plutôt que vraiment fermée) peut continuer à
+// servir une ancienne version pendant longtemps après un déploiement.
+self.skipWaiting();
+clientsClaim();
 
 precacheAndRoute(self.__WB_MANIFEST);
 
