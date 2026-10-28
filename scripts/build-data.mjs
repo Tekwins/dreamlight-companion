@@ -6,6 +6,7 @@
 
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { BIOMES } from '../src/data/biomes.js';
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([a-zA-Z]:)/, '$1');
 const RAW = ROOT + 'data/raw/frfandom';
@@ -421,6 +422,28 @@ function infoboxField(wt, field) {
   return out;
 }
 
+// Comme infoboxField, mais ne s'arrête pas sur un \n : certains champs (ex. « localisation= »
+// des fleurs) tiennent sur plusieurs lignes dans le wikitext (une sous-zone par ligne, via
+// **{{Pic 20P|Biome}}). Suit aussi la profondeur des [[liens]], pas seulement des {{gabarits}}.
+function infoboxFieldML(wt, field) {
+  const start = wt.indexOf(field + '=');
+  if (start === -1) return null;
+  let i = start + field.length + 1;
+  let depth = 0;
+  let out = '';
+  while (i < wt.length) {
+    const two = wt.slice(i, i + 2);
+    if (two === '{{' || two === '[[') { depth++; out += two; i += 2; continue; }
+    if (two === '}}' || two === ']]') {
+      if (depth === 0) break;
+      depth--; out += two; i += 2; continue;
+    }
+    if (depth === 0 && wt[i] === '|') break;
+    out += wt[i]; i++;
+  }
+  return out;
+}
+
 // La ligne "'''Récompenses :'''" du corps est bien plus souvent présente que les champs de
 // l'infobox (393 pages sur 479) : on la préfère, avec l'infobox en repli.
 function parseRewards(wt) {
@@ -629,6 +652,95 @@ async function writeMemories(items) {
   console.log('src/data/memories.js écrit (' + items.length + ' souvenirs).');
 }
 
+// Repousse des fleurs décoratives, depuis dreamlightvalleywiki.com/Foraging#Flower_Spawning
+// (formule communautaire, non confirmée par Gameloft) : 4 paliers de rareté selon le nombre de
+// fleurs par biome, toujours ~2h pour tout repousser quel que soit le palier (6×20=4×30=3×40=2×60).
+// Le wiki FR ne documente pas la rareté : on la retrouve via le nom anglais (nom_vo=).
+const FLOWER_RARITY = {
+  abundant: { max: 6, timer: 20 },
+  average: { max: 4, timer: 30 },
+  rare: { max: 3, timer: 40 },
+  ultra: { max: 2, timer: 60 }
+};
+const FLOWER_RARITY_EN = {
+  abundant: ['Blue Glass-Like Flowers', 'Crimson Eternal Poppies', 'Dusty Violet Rose', 'Green Passion Lily', 'Orange Bird of Paradise', 'Pink Bromeliad', 'Pink Cactus Flower', 'Pink Hydrangea', 'Purple Marsh Milkweed', 'Red Bell Flower', 'Red Bromeliad', 'Red Falling Penstemon', 'Red Luminescent Flower', 'White Impatiens', 'Yellow Daisy', 'Yellow Pitcher Plant', 'Yellow Tale Cone Flowers'],
+  average: ['Blue Falling Penstemon', 'Blue Hydrangea', 'Blue Luminescent Flower', 'Blue Star Lily', 'Blue Tale Cone Flower', 'Dandelion', 'Green Glass-Like Flowers', 'Goldenrod Eternal Poppies', 'Orange Marsh Milkweed', 'Orange Pitcher Plant', 'Pink Houseleek', 'Purple Bell Flower', 'Purple Falling Penstemon', 'Purple Fly Trap', 'Purple Impatiens', 'Purple Rising Penstemon', 'Red Nasturtium', 'Red Passion Lily', 'Slate Gray Rose', 'Sunflower', 'White Bird of Paradise', 'White Daisy', 'White Marsh Milkweed', 'White Passion Lily', 'Yellow Cactus Flower'],
+  rare: ['Blue Marsh Milkweed', 'Blue Passion Lily', 'Green Rising Penstemon', 'Olive Green Tale Cone Flower', 'Orange Glass-Like Flowers', 'Orange Houseleek', 'Orange Nasturtium', 'Orange Star Lily', 'Pink Luminescent Flower', 'Purple Hydrangea', 'Teal Eternal Poppies', 'White Cactus Flower', 'White Rose'],
+  ultra: ['Beige Tale Cone Flower', 'Black Glass-Like Flowers', 'Black Passion Lily', 'Fuchsia Eternal Poppies', 'Green Fly Trap', 'Green Luminescent Flower', 'Orange & Red Marsh Milkweed', 'Red Daisy', 'Pink Rose', 'Purple Cactus Flower', 'Red Pitcher Plant', 'White & Pink Falling Penstemon', 'White & Red Hydrangea', 'White Bell Flower', 'Yellow Bird of Paradise', 'Yellow Bromeliad', 'Yellow Nasturtium']
+};
+const FLOWER_RARITY_BY_EN = {};
+for (const [tier, names] of Object.entries(FLOWER_RARITY_EN)) for (const n of names) FLOWER_RARITY_BY_EN[n] = tier;
+// Volontairement absentes de cette table (donc ignorées par parseFleurs) : les « Fleurs en soie »
+// (Wishblossom Ranch) suivent un mécanisme différent (1 repousse par sous-zone toutes les 10 à
+// 16 min, pas le système à 4 paliers ci-dessus) ; Crocus/Muguet (Ranch) et Chardon/Digitale
+// (Honeyglow Woods) n'ont pas encore de fiche individuelle sur le wiki FR ; la Rose rouge vient
+// de la Serre de la Bête, pas d'une repousse en biome.
+
+// Biome (identifiant de src/data/biomes.js) à partir du champ localisation= : liste les icônes
+// {{Pic 20P|Nom du biome}} rencontrées (parfois plusieurs sous-zones d'un même biome, ex. deux
+// liens pour une seule fleur de Comté des Contes) et prend la première qui correspond à un biome
+// connu de l'appli.
+function parseFleurBiome(wt) {
+  const val = infoboxFieldML(wt, 'localisation');
+  if (!val) return null;
+  for (const m of val.matchAll(/\{\{Pic 20P\|([^}]+)\}\}/g)) {
+    // Un article en tête ("La Reliure") ne doit pas empêcher le rapprochement avec "Reliure".
+    const name = m[1].trim().toLowerCase().replace(/^(le|la|les|l')\s*/, '');
+    const b = BIOMES.find((b) => b.name.toLowerCase().replace(/^(le|la|les|l')\s*/, '') === name);
+    if (b) return b.id;
+  }
+  return null;
+}
+
+async function parseFleurs() {
+  const files = (await readdir(RAW)).filter((f) => !f.startsWith('_'));
+  const flowers = [];
+  const skipped = [];
+  for (const f of files) {
+    const raw = JSON.parse(await readFile(RAW + '/' + f, 'utf8'));
+    const wt = raw.wikitext || '';
+    if (!/\[\[Catégorie:Fleurs\]\]/.test(wt)) continue;
+    // Le nom de fichier suit toujours le titre de la page (contrairement aux recettes/meubles,
+    // image1= a quelques copier-coller fautifs sur ce wiki, ex. Bromélia rouge -> Bromélia rose.png).
+    const hasImg = /image1=\S/.test(wt);
+    const vo = infoboxField(wt, 'nom_vo');
+    const biome = parseFleurBiome(wt);
+    const rarity = vo && FLOWER_RARITY_BY_EN[vo.trim()];
+    const price = wt.match(/prix_de_vente=([^{|\n]+)\{\{Pièce\}\}/);
+    // Pas assez d'info fiable (biome ou rareté introuvable) : on laisse de côté plutôt que deviner.
+    if (!hasImg || !biome || !rarity) { skipped.push(raw.title); continue; }
+    flowers.push({
+      id: 'fleur-' + slug(raw.title),
+      name: raw.title,
+      file: fileName(raw.title) + '.png',
+      biome,
+      rarity,
+      timer: FLOWER_RARITY[rarity].timer,
+      maxSpawns: FLOWER_RARITY[rarity].max,
+      price: price ? num(price[1]) : 0
+    });
+  }
+  if (skipped.length) console.log('Fleurs sans biome/rareté fiable (ignorées) :', skipped.join(', '));
+  return flowers.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+}
+
+async function writeFlowers(items) {
+  const lines = [];
+  lines.push('// Fleurs décoratives, générées depuis le wiki Fandom francophone (Catégorie:Fleurs).');
+  lines.push('// rarity/timer/maxSpawns : délai de repousse (voir scripts/build-data.mjs), formule');
+  lines.push('// communautaire du wiki anglais (dreamlightvalleywiki.com/Foraging#Flower_Spawning),');
+  lines.push('// non confirmée par Gameloft. Extensions Wishblossom Ranch (Crocus, Muguet) et Honeyglow');
+  lines.push("// Woods (Chardon, Digitale) pas encore documentées individuellement sur le wiki FR : absentes.");
+  lines.push('export const FLOWERS = [');
+  for (const it of items) {
+    lines.push(`  { id: ${JSON.stringify(it.id)}, name: ${JSON.stringify(it.name)}, file: ${JSON.stringify(it.file)}, biome: ${JSON.stringify(it.biome)}, rarity: ${JSON.stringify(it.rarity)}, timer: ${it.timer}, maxSpawns: ${it.maxSpawns}, price: ${it.price} },`);
+  }
+  lines.push('];');
+  lines.push('');
+  await writeFile(ROOT + 'src/data/flowers.js', lines.join('\n'));
+  console.log('src/data/flowers.js écrit (' + items.length + ' fleurs).');
+}
+
 async function main() {
   const recipes = await parsePlats();
   console.log('Recettes extraites :', recipes.length);
@@ -717,6 +829,10 @@ async function main() {
   const memories = await parseMemories();
   console.log('Souvenirs extraits :', memories.length);
   await writeMemories(memories);
+
+  const flowers = await parseFleurs();
+  console.log('Fleurs extraites :', flowers.length);
+  await writeFlowers(flowers);
 }
 
 await main();

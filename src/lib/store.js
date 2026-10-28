@@ -14,6 +14,8 @@ export const DEFAULT_STATE = {
   pantry: {},
   shopping: [],
   plantings: [],
+  // Minuteurs de repousse des fleurs décoratives (Cueillette) : { id, flowerId, startedAt }.
+  flowerTimers: [],
   friendship: {},
   // Métier perso attribué à un habitant (repère, pas une donnée du jeu) : { [villagerId]: jobId }.
   villagerJobs: {},

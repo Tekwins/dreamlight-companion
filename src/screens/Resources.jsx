@@ -3,11 +3,21 @@ import { useStore } from '../lib/store.js';
 import { useNow } from '../lib/router.js';
 import { BIOMES, EXTENSIONS, extOfBiomes } from '../data/biomes.js';
 import { CROPS, FISH, GEMS, FORAGE, RIPPLES, GEM_COLORS } from '../data/resources.js';
+import { FLOWERS } from '../data/flowers.js';
 import { visibleItems, newId, biomeName } from '../lib/game.js';
 import { formatDuration } from '../lib/time.js';
 import { Icon, Thumb, Seg, Back, BiomePills, GroupTitle, ExtTag, Search, norm } from '../ui.jsx';
 
-const CAT_LABEL = { fruit: 'Fruit', epice: 'Épice', champi: 'Champignon' };
+const CAT_LABEL = { fruit: 'Fruit', epice: 'Épice', champi: 'Champignon', fleur: 'Fleur' };
+// Délai de repousse : voir le commentaire en tête de src/data/flowers.js (source + limites).
+const RARITY_LABEL = { abundant: 'Abondante', average: 'Courante', rare: 'Rare', ultra: 'Très rare' };
+// Fleurs mises à la forme attendue par la vue Cueillette (regroupable par biome comme fruits/épices/champis).
+const FLOWER_ITEMS = FLOWERS.map((f) => ({ ...f, biomes: [f.biome], cat: 'fleur' }));
+const FLOWER = Object.fromEntries(FLOWERS.map((f) => [f.id, f]));
+// Le minuteur interne du jeu tourne en continu (pas déclenché par la cueillette) : seule la 1ère
+// fleur après un nettoyage complet a un délai incertain (0 à son délai propre) ; repousse totale
+// toujours à 2h pile, quel que soit le palier de rareté (6×20=4×30=3×40=2×60=120 min).
+const FLOWER_FULL_RESPAWN = 120;
 
 const CONFIG = {
   potager: {
@@ -27,7 +37,7 @@ const CONFIG = {
     }
   },
   cueillette: {
-    title: 'Cueillette', items: FORAGE, unit: 'élément',
+    title: 'Cueillette', items: [...FORAGE, ...FLOWER_ITEMS], unit: 'élément',
     sorts: [['name', 'Nom'], ['price', 'Prix']],
     sorters: { name: (a, b) => a.name.localeCompare(b.name, 'fr'), price: (a, b) => b.price - a.price }
   },
@@ -52,6 +62,7 @@ export function ResourceScreen({ kind, initialQ }) {
   const [cat, setCat] = useState('all');
   const [q, setQ] = useState(initialQ || '');
   const [planting, setPlanting] = useState(null);
+  const [flowerPicking, setFlowerPicking] = useState(false);
   // Arrivée depuis la Recherche globale avec un terme différent : on le reprend.
   useEffect(() => { if (initialQ) setQ(initialQ); }, [initialQ]);
 
@@ -97,6 +108,10 @@ export function ResourceScreen({ kind, initialQ }) {
     }));
   };
 
+  const startFlowerTimer = (flowerId) => {
+    update((s) => ({ flowerTimers: [...s.flowerTimers, { id: newId(), flowerId, startedAt: Date.now() }] }));
+  };
+
   const plural = (n) => `${n} ${cfg.unit}${n > 1 ? 's' : ''}`;
 
   return (
@@ -114,9 +129,12 @@ export function ResourceScreen({ kind, initialQ }) {
         </div>
       )}
       {kind === 'cueillette' && (
-        <div class="small muted" style={{ lineHeight: 1.45 }}>
-          Fruits, épices et champignons réapparaissent chaque jour à un nouvel endroit du biome (pas de minuteur précis à afficher). Seules les fleurs décoratives ont un vrai délai de réapparition (jusqu'à 2 h selon leur rareté) ; elles ne sont pas encore suivies ici.
-        </div>
+        <>
+          <div class="small muted" style={{ lineHeight: 1.45 }}>
+            Fruits, épices et champignons réapparaissent chaque jour à un nouvel endroit du biome (pas de minuteur précis à afficher). Seules les fleurs décoratives ont un vrai délai de réapparition, suivi ci-dessous.
+          </div>
+          <FlowerTimers onAdd={() => setFlowerPicking(true)} />
+        </>
       )}
 
       <Search value={q} onInput={setQ} placeholder={`Chercher un${cfg.unit === 'culture' ? 'e' : ''} ${cfg.unit}…`} />
@@ -135,7 +153,7 @@ export function ResourceScreen({ kind, initialQ }) {
           options={[['all', 'Tous', 'var(--muted)'], ...Object.entries(RIPPLES).map(([id, r]) => [id, r.label, r.color])]} />
       )}
       {kind === 'cueillette' && (
-        <Seg label="Catégorie" value={cat} onChange={setCat} options={[['all', 'Tout'], ['fruit', 'Fruits'], ['epice', 'Épices'], ['champi', 'Champis']]} />
+        <Seg label="Catégorie" value={cat} onChange={setCat} options={[['all', 'Tout'], ['fruit', 'Fruits'], ['epice', 'Épices'], ['champi', 'Champis'], ['fleur', 'Fleurs']]} />
       )}
 
       <div class="between wrap">
@@ -161,7 +179,7 @@ export function ResourceScreen({ kind, initialQ }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '8px' }}>
               {g.items.map((it) => (
                 <ResourceItem key={it.id} kind={kind} it={it} selected={biome}
-                  onAction={() => (kind === 'potager' ? setPlanting(it) : addToShopping(it))} />
+                  onAction={() => (kind === 'potager' ? setPlanting(it) : it.cat === 'fleur' ? startFlowerTimer(it.id) : addToShopping(it))} />
               ))}
             </div>
           </section>
@@ -170,6 +188,9 @@ export function ResourceScreen({ kind, initialQ }) {
       </div>
 
       {planting && <PlantModal initial={planting === true ? null : planting} onClose={() => setPlanting(null)} />}
+      {flowerPicking && (
+        <FlowerPickModal onPick={(id) => { startFlowerTimer(id); setFlowerPicking(false); }} onClose={() => setFlowerPicking(false)} />
+      )}
     </div>
   );
 }
@@ -187,6 +208,7 @@ function ResourceItem({ kind, it, selected, onAction }) {
           {kind === 'mines' && <span class="tag" style={{ background: GEM_COLORS[it.color]?.color }}>{GEM_COLORS[it.color]?.label}</span>}
           {it.cond && <span class="tag" style={{ background: '#7DB4F5' }}>{it.cond}</span>}
           {kind === 'cueillette' && <span class="tag outline">{CAT_LABEL[it.cat]}</span>}
+          {it.cat === 'fleur' && <span class="tag outline">{RARITY_LABEL[it.rarity]} · {it.timer} min</span>}
           <ExtTag ext={ext} />
         </div>
         <BiomePills ids={it.biomes} selected={selected} />
@@ -202,8 +224,8 @@ function ResourceItem({ kind, it, selected, onAction }) {
         {kind === 'potager' && <><span class="big-num">{it.profit}</span><span class="small muted" style={{ fontWeight: 700 }}>pièces/h</span></>}
         {(kind === 'mines' || (kind === 'cueillette' && it.price > 0)) && <><span class="big-num">{it.price}</span><span class="small muted" style={{ fontWeight: 700 }}>pièces</span></>}
         <button class="icon-btn" style={{ width: '38px', height: '38px' }} onClick={onAction}
-          aria-label={kind === 'potager' ? `Planter : ${it.name}` : `Ajouter à la liste de courses : ${it.name}`}>
-          <Icon name={kind === 'potager' ? 'sprout' : 'plus'} size={18} />
+          aria-label={kind === 'potager' ? `Planter : ${it.name}` : it.cat === 'fleur' ? `Lancer un minuteur : ${it.name}` : `Ajouter à la liste de courses : ${it.name}`}>
+          <Icon name={kind === 'potager' ? 'sprout' : it.cat === 'fleur' ? 'clock' : 'plus'} size={18} />
         </button>
       </div>
     </div>
@@ -272,3 +294,65 @@ function PlantModal({ initial, onClose }) {
   );
 }
 
+function FlowerTimers({ onAdd }) {
+  const { state, update } = useStore();
+  const now = useNow(15000);
+  return (
+    <div class="card stack" style={{ gap: '6px' }}>
+      <div class="between">
+        <span class="small" style={{ fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--green)' }}>Mes parcelles de fleurs</span>
+        <button class="btn sm" onClick={onAdd}><Icon name="plus" size={16} />Nettoyée</button>
+      </div>
+      {state.flowerTimers.map((t) => {
+        const f = FLOWER[t.flowerId];
+        const elapsed = Math.floor((now.getTime() - t.startedAt) / 60000);
+        const firstLeft = Math.max(0, (f?.timer || 0) - elapsed);
+        const allLeft = Math.max(0, FLOWER_FULL_RESPAWN - elapsed);
+        return (
+          <div key={t.id} class="between" style={{ minHeight: '40px' }}>
+            <span style={{ fontWeight: 800 }}>{f?.name || 'Fleur'}</span>
+            <span class="row" style={{ gap: '8px' }}>
+              {!allLeft ? (
+                <span class="tag">Tout repoussé</span>
+              ) : firstLeft ? (
+                <span class="small muted" style={{ fontWeight: 700 }}>1ʳᵉ d'ici {formatDuration(firstLeft)}</span>
+              ) : (
+                <span class="small muted" style={{ fontWeight: 700 }}>tout dans {formatDuration(allLeft)}</span>
+              )}
+              <button class="icon-btn" style={{ width: '36px', height: '36px' }} aria-label="Retirer"
+                onClick={() => update((s) => ({ flowerTimers: s.flowerTimers.filter((x) => x.id !== t.id) }))}>
+                <Icon name={allLeft ? 'x' : 'check'} size={18} />
+              </button>
+            </span>
+          </div>
+        );
+      })}
+      {!state.flowerTimers.length && (
+        <span class="small muted">Aucun minuteur. Touche « Nettoyée » juste après avoir cueilli toutes les fleurs d'une couleur dans un biome.</span>
+      )}
+    </div>
+  );
+}
+
+function FlowerPickModal({ onPick, onClose }) {
+  const { state } = useStore();
+  const flowers = visibleItems(FLOWER_ITEMS, state.extensions).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const [flowerId, setFlowerId] = useState(flowers[0]?.id);
+  return (
+    <div class="modal-back" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Nouveau minuteur de fleur">
+        <h2>Parcelle nettoyée</h2>
+        <label class="field">Fleur
+          <select value={flowerId} onChange={(e) => setFlowerId(e.currentTarget.value)}>
+            {flowers.map((f) => <option key={f.id} value={f.id}>{f.name} ({RARITY_LABEL[f.rarity]}, {f.timer} min)</option>)}
+          </select>
+        </label>
+        <div class="small muted">Le minuteur démarre maintenant. À lancer juste après avoir cueilli toutes les fleurs de cette couleur dans ce biome.</div>
+        <div class="grid-2">
+          <button class="btn ghost" onClick={onClose}>Annuler</button>
+          <button class="btn" onClick={() => onPick(flowerId)}>Lancer</button>
+        </div>
+      </div>
+    </div>
+  );
+}

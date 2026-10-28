@@ -50,11 +50,14 @@ Interface et textes **en français**. Répondre à Tek en français.
 - **Bonus de rôle des habitants** : calculé (`roleBonus()` dans `Friends.jsx`), formule communautaire du wiki
   anglais (dreamlightvalleywiki.com/Bonuses, non confirmée par Gameloft) : base (20 % Jardinage, 25 % les autres
   rôles) + 3,5 %/niveau du compagnon actif + 1 %/niveau de chaque autre habitant sur le même rôle.
-- **Délai de repousse des fleurs décoratives** (Cueillette) : pas encore suivi — mécanique réelle trouvée sur
-  dreamlightvalleywiki.com/Foraging#Flower_Spawning (4 paliers de rareté : 6/4/3/2 fleurs par biome → 20/30/40/60 min
-  par fleur, max 2h pour tout repousser ; le minuteur interne tourne en continu, donc seule la 1ère fleur après un
-  nettoyage complet a un délai incertain). Nécessite un nouveau jeu de données (~75 fleurs, nom FR + biome + rareté)
-  et une maquette d'interface pour le minuteur — à faire en concertation avec Tek vu l'ampleur.
+- **Délai de repousse des fleurs décoratives** (Cueillette) : suivi via un minuteur manuel (« Mes parcelles de
+  fleurs », comme les plantations du Potager). `src/data/flowers.js` (72 fleurs, générées depuis Catégorie:Fleurs
+  du wiki FR, voir `parseFleurs()` dans build-data.mjs) : biome + rareté/délai (formule communautaire du wiki
+  anglais, dreamlightvalleywiki.com/Foraging#Flower_Spawning, non confirmée par Gameloft — 4 paliers, 6/4/3/2
+  fleurs par biome → 20/30/40/60 min/fleur, 2h pour tout repousser). Absentes : Crocus/Muguet (Wishblossom Ranch)
+  et Chardon/Digitale (Honeyglow Woods), pas encore de fiche individuelle sur le wiki FR ; Fleurs en soie (Ranch),
+  mécanisme différent (repousse par sous-zone, pas le système à 4 paliers) ; images non récupérables (même blocage
+  Cloudflare que les meubles, pas de catégorie fleurs sur mydreamlightvalley.com).
 
 Maquette alignée (https://claude.ai/artifact/4SfLa7iz17AMGsGRtj8zFR) : écrans principaux, vue « Par biome »
 (Potager/Pêche/Cueillette/Mines), recherche globale détaillée, Collection (Voie étoilée/Souvenirs/Meubles).

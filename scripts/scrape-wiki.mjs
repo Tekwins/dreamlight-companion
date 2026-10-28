@@ -49,6 +49,9 @@ const TARGETS = [
   { wiki: 'frfandom', page: 'Succès' },
   { wiki: 'frfandom', page: 'Voie des étoiles Élégance spectrale' },
   { wiki: 'frfandom', page: 'Voie des étoiles Aventure maritime' },
+  // Fleurs décoratives (77 fiches) : chaque page donne le biome (localisation=) et le nom anglais
+  // (nom_vo=, sert à retrouver la rareté/délai de repousse sur le wiki EN, non documentés en FR).
+  { wiki: 'frfandom', category: 'Fleurs' },
   // Chaque page de quête a une fiche avec son type (Histoire/Amitié) et, pour les quêtes
   // d'amitié, l'image de l'habitant concerné : pas besoin de corréler avec le wiki anglais.
   { wiki: 'frfandom', category: 'Quêtes' },
@@ -251,9 +254,14 @@ async function fetchImages() {
   // (Cloudflare) ni le wiki EN (pas de nom anglais pour la plupart des meubles) : pas la peine de
   // perdre 12s par échec dessus, contrairement aux recettes/habitants qui ont de vraies chances.
   const furnitureFiles = new Set(furnitureMod.FURNITURE.map((f) => f.file));
+  // Fleurs décoratives : mêmes images que la plupart des meubles, uniquement sur le wiki FR
+  // (Cloudflare) ; mydreamlightvalley.com n'a pas de catégorie fleurs/cueillette du tout
+  // (vérifié sur fr_sitemap.xml). Même exclusion que les meubles, pour la même raison.
+  const flowerMod = await import('../src/data/flowers.js');
+  const flowerFiles = new Set(flowerMod.FLOWERS.map((f) => f.file));
 
   for (const name of files) {
-    if (furnitureFiles.has(name)) continue;
+    if (furnitureFiles.has(name) || flowerFiles.has(name)) continue;
     const out = path.join('public/img', name.replace(/ /g, '_'));
     if (existsSync(out)) continue;
     try {
@@ -480,6 +488,8 @@ const mode = process.argv[2];
 if (mode === 'images') await fetchImages();
 // Relance juste les quêtes (657 pages) sans retéléchargement complet : npm run data -- quetes
 else if (mode === 'quetes') await fetchPages(TARGETS.filter((t) => t.category === 'Quêtes'));
+// Relance juste les fleurs décoratives (77 pages) : npm run data -- fleurs
+else if (mode === 'fleurs') await fetchPages(TARGETS.filter((t) => t.category === 'Fleurs'));
 // Meubles (listes de catégories) + Souvenirs (page Memories) : npm run data -- collection
 else if (mode === 'collection') await fetchPages(TARGETS.filter((t) => t.group === 'collection'));
 // Récompenses d'amitié depuis mydreamlightvalley.com, pour combler les trous du wiki FR : npm run data -- amitie
