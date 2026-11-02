@@ -17,7 +17,8 @@ const JOBS = [
   ['cueillette', 'Cueillette', 'basket'],
   ['extraction', 'Extraction minière', 'gem'],
   ['excavation', 'Excavation', 'shovel'],
-  ['anigamis', 'Chasse aux anigamis', 'paw'],
+  // Anigamis capturés avec le Filet Royal, obtenu pendant la quête d'introduction de The Storybook Vale.
+  ['anigamis', 'Chasse aux anigamis', 'paw', 'vale'],
   ['courbage', 'Table de courbage temporel', 'clock', 'rift']
 ];
 const JOB = Object.fromEntries(JOBS.map(([id, label, icon, ext]) => [id, { label, icon, ext }]));
