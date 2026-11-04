@@ -70,12 +70,18 @@ export function Animals({ selectedId }) {
     const tamed = !!state.tamed[v.id];
     return (
       <a key={v.id} href={`#/animaux/${v.id}`} class={'item' + (selected?.id === v.id ? ' selected' : '')} style={{ alignItems: 'center', opacity: av.now ? 1 : 0.7 }}>
-        <Thumb file={v.file + '.png'} name={v.name} />
+        <div style={{ position: 'relative', flex: 'none' }}>
+          <Thumb file={v.file + '.png'} name={v.name} />
+          {tamed && (
+            <span title="Apprivoisé" style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--teal)', color: '#14123A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="check" size={11} />
+            </span>
+          )}
+        </div>
         <div class="body">
           <div class="row wrap" style={{ gap: '6px' }}>
             <span class="name">{v.name}</span>
             {rare && <span class="tag rare">RARE</span>}
-            {tamed && <span class="tag outline">Apprivoisé</span>}
             <ExtTag ext={BIOME[v.species.biome]?.ext} />
           </div>
           <div class="row wrap" style={{ gap: '4px' }}>
@@ -275,10 +281,16 @@ export function AnimalDetail({ v, embedded }) {
             const oav = availabilityLabel(o.schedule, now);
             return (
               <a key={o.id} href={`#/animaux/${o.id}`} class="stack" style={{ alignItems: 'center', gap: '4px', color: 'var(--text)', textAlign: 'center' }}>
-                <Thumb file={o.file + '.png'} name={o.name} />
+                <div style={{ position: 'relative' }}>
+                  <Thumb file={o.file + '.png'} name={o.name} />
+                  {state.tamed[o.id] && (
+                    <span title="Apprivoisé" style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '18px', height: '18px', borderRadius: '50%', background: 'var(--teal)', color: '#14123A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="check" size={11} />
+                    </span>
+                  )}
+                </div>
                 <span class="small" style={{ fontWeight: 800 }}>{o.name}</span>
                 <span class="small" style={{ fontWeight: 700, color: oav.now ? 'var(--teal)' : 'var(--muted)' }}>{oav.text}</span>
-                {state.tamed[o.id] && <span class="tag outline">Apprivoisé</span>}
               </a>
             );
           })}
