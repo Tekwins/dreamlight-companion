@@ -9,6 +9,7 @@
 //   npm run data -- collection -> listes de catégories Meubles + page Souvenirs (pour Collection)
 //   npm run data -- amitie    -> récompenses d'amitié sur mydreamlightvalley.com (repli du wiki FR, souvent incomplet)
 //   npm run data -- amitie-en -> récompenses d'amitié sur le wiki EN, en anglais (dernier repli, après amitie)
+//   npm run data -- fleurs-images -> images de fleurs via le wiki EN (nom_vo), sans tout retélécharger
 //
 // Les pages brutes servent ensuite à générer les fichiers de src/data
 // (recettes complètes, habitants, quêtes, succès, Voies des étoiles).
@@ -277,6 +278,7 @@ async function fetchImages() {
   }
 
   await fetchImagesFromMdv();
+  await fetchFlowersFromDlv();
 }
 
 // Repli pour les recettes/habitants encore sans image : mydreamlightvalley.com/fr héberge
@@ -484,6 +486,35 @@ async function fetchImagesFromMdv() {
   }
 }
 
+// Fleurs décoratives : mydreamlightvalley.com n'a pas de catégorie fleurs (vérifié sur son
+// sitemap), mais le wiki EN héberge l'image de chaque fleur sous son nom anglais (nom_vo=, lu
+// dans les fiches brutes déjà en cache sous data/raw/frfandom/<nom FR>.json) — pas bloqué par
+// Cloudflare, contrairement au CDN du wiki FR. Trouvé en reprenant la même idée que pour les
+// habitants (nom_vo), appliquée pour la 1ère fois aux fleurs.
+async function fetchFlowersFromDlv() {
+  const flowerMod = await import('../src/data/flowers.js');
+  const missing = flowerMod.FLOWERS.filter((f) => !existsSync(path.join('public/img', f.file.replace(/ /g, '_'))));
+  if (!missing.length) { console.log('Toutes les fleurs ont déjà leur image.'); return; }
+  console.log(missing.length, 'fleurs sans image, on essaie le wiki anglais (nom_vo)');
+  for (const f of missing) {
+    const rawFile = path.join('data', 'raw', 'frfandom', f.name + '.json');
+    if (!existsSync(rawFile)) { console.warn('  ?? pas de fiche brute pour', f.name); continue; }
+    const raw = JSON.parse(await readFile(rawFile, 'utf8'));
+    const vo = raw.wikitext.match(/nom_vo=([^|}]+)/)?.[1]?.trim();
+    if (!vo) { console.warn('  ?? pas de nom_vo pour', f.name); continue; }
+    try {
+      const url = await findImageUrl(vo + '.png');
+      if (!url) { console.warn('  ?? introuvable (dlv) :', f.name, '<-', vo); continue; }
+      const result = await saveImage(url, f.file);
+      if (result === 'ok') console.log('  ok (dlv)', f.file, '<-', vo);
+      else console.warn('  ?? (dlv)', f.file, '-', result);
+    } catch (e) {
+      console.warn('  !! (dlv)', f.file, '-', e.message);
+    }
+    await sleep(400);
+  }
+}
+
 const mode = process.argv[2];
 if (mode === 'images') await fetchImages();
 // Relance juste les quêtes (657 pages) sans retéléchargement complet : npm run data -- quetes
@@ -508,5 +539,11 @@ else if (mode === 'images-mdv') {
   await mkdir('public/img', { recursive: true });
   await fetchFurnitureFromMdv(await import('../src/data/furniture.js'));
   await fetchImagesFromMdv();
+  await fetchFlowersFromDlv();
+}
+// Relance juste le repli fleurs -> wiki EN (nom_vo), sans retélécharger le reste : npm run data -- fleurs-images
+else if (mode === 'fleurs-images') {
+  await mkdir('public/img', { recursive: true });
+  await fetchFlowersFromDlv();
 }
 else await fetchPages();
