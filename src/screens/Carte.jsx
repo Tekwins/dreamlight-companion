@@ -13,7 +13,21 @@ const BLOBS = [
   'M -65,-20 C -72,-55 -35,-72 8,-65 C 48,-72 78,-42 72,-2 C 80,32 48,62 8,58 C -32,66 -62,35 -65,-20 Z',
   'M -80,20 C -95,-20 -70,-70 -20,-85 C 25,-98 75,-80 90,-35 C 100,5 85,50 45,70 C 5,90 -45,80 -80,20 Z'
 ];
-const TEXTURE = { esplanade: null, prairie: null, plage: 'dots', foret: 'diag', bayou: 'diag', plateau: null, hauteurs: 'dots', terres: 'cross', port: 'dots', dunes: 'dots', meandres: 'diag', reliure: null, mythopie: 'cross', comte: null, ranch: null, alpes: 'dots', gulch: 'cross', pixie: null };
+// Texture de chaque zone : vraie tuile de carte extraite des fichiers du jeu (bundle
+// ui-images-menu-map-hires), recadrée/compressée dans public/img/map/. Association zone ↔
+// tuile faite à l'œil (aucune carte officielle assemblée pour les extensions, voir CLAUDE.md) —
+// fiable pour le jeu de base (noms de tuiles explicites), au mieux pour les extensions quand
+// plusieurs tuiles partagent le même biome (ex. les 4 tuiles "desert" pour les 4 zones de Dunes).
+const TILE = {
+  esplanade: 'esplanade.webp', prairie: 'prairie.webp', plage: 'plage.webp', foret: 'foret.webp',
+  bayou: 'bayou.webp', plateau: 'plateau.webp', hauteurs: 'hauteurs.webp', terres: 'terres.webp',
+  'la-cour': 'la-cour.webp', 'les-quais': 'les-quais.webp', 'la-promenade': 'la-promenade.webp', 'le-belvedere': 'le-belvedere.webp',
+  loasis: 'loasis.webp', 'le-desert': 'le-desert.webp', 'les-plaines': 'les-plaines.webp', 'les-ruines': 'les-ruines.webp',
+  'la-lisiere': 'la-lisiere.webp', 'le-bosquet': 'le-bosquet.webp', 'les-pres': 'les-pres.webp', 'le-lagon': 'le-lagon.webp',
+  bibliotheque: 'bibliotheque.webp', 'chutes-theiere': 'chutes-theiere.webp', 'champs-elysees': 'champs-elysees.webp', 'mont-olympe': 'mont-olympe.webp',
+  'bois-sauvages': 'bois-sauvages.webp', 'ranch-florespérance': 'ranch.webp', 'voie-souhaits': 'voie-souhaits.webp',
+  'alpes-enchantees': 'alpes-enchantees.webp', 'highlands-ranch': 'highlands-ranch.webp', 'ravin-ravissant': 'ravin-ravissant.webp', 'clairiere-feerique': 'clairiere-feerique.webp'
+};
 
 // Zones affichées sur la carte. Le jeu de base reprend tel quel les 8 biomes réels
 // (biomes.js). Les extensions ont des lieux bien plus précis que nos biomes actuels
@@ -141,15 +155,6 @@ export function Carte() {
               <filter id="map-glow" x="-60%" y="-60%" width="220%" height="220%">
                 <feGaussianBlur stdDeviation="10" />
               </filter>
-              <pattern id="map-tex-dots" width="16" height="16" patternUnits="userSpaceOnUse">
-                <circle cx="4" cy="4" r="1.6" fill="var(--bg)" /><circle cx="12" cy="12" r="1.6" fill="var(--bg)" />
-              </pattern>
-              <pattern id="map-tex-diag" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                <line x1="0" y1="0" x2="0" y2="14" stroke="var(--bg)" stroke-width="2" />
-              </pattern>
-              <pattern id="map-tex-cross" width="16" height="16" patternUnits="userSpaceOnUse">
-                <path d="M0,0 L16,16 M16,0 L0,16" stroke="var(--bg)" stroke-width="1.4" fill="none" />
-              </pattern>
               <radialGradient id="map-ocean" cx="50%" cy="40%" r="78%">
                 <stop offset="0%" stop-color="var(--surface-2)" />
                 <stop offset="60%" stop-color="var(--surface)" />
@@ -163,13 +168,19 @@ export function Carte() {
 
             {map.zones.map((zone) => {
               const isSel = zone.id === zoneId;
-              const texture = TEXTURE[zone.biome];
+              const tile = TILE[zone.id];
               return (
                 <g key={zone.id} transform={`translate(${zone.cx},${zone.cy}) rotate(${zone.rot}) scale(${zone.scale})`} onClick={() => setZoneId(zone.id)} style={{ cursor: 'pointer' }}>
                   {isSel && <path d={BLOBS[zone.blob]} fill="var(--accent)" opacity="0.5" filter="url(#map-glow)" transform="scale(1.22)" />}
                   <path d={BLOBS[zone.blob]} fill={BIOME[zone.biome]?.color || '#999'} fill-opacity="0.88" filter="url(#map-sketchy)" />
+                  {tile && (
+                    <g clip-path={`url(#clip-${zone.id})`}>
+                      <clipPath id={`clip-${zone.id}`}><path d={BLOBS[zone.blob]} /></clipPath>
+                      <image href={`img/map/${tile}`} x="-140" y="-140" width="280" height="280" preserveAspectRatio="xMidYMid slice" />
+                      <path d={BLOBS[zone.blob]} fill={BIOME[zone.biome]?.color || '#999'} opacity="0.3" />
+                    </g>
+                  )}
                   <path d={BLOBS[zone.blob]} fill="none" stroke={isSel ? '#FFE8A3' : 'var(--bg)'} stroke-width={isSel ? 9 : 7} stroke-dasharray="2 11" stroke-linecap="round" filter="url(#map-sketchy)" />
-                  {texture && <path d={BLOBS[zone.blob]} fill={`url(#map-tex-${texture})`} opacity="0.5" />}
                 </g>
               );
             })}

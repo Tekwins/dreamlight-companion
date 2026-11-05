@@ -29,6 +29,12 @@ Interface et textes **en français**. Répondre à Tek en français.
   donnée de jeu confirmée — gardées en local dans `Carte.jsx` (tableaux `RIFT_ZONES`/`VALE_ZONES`/`RANCH_ZONES`),
   rattachées au biome réel le plus proche pour les ressources/pêche/animaux, disposition plausible mais pas
   géographiquement garantie (aucune carte officielle assemblée trouvée pour les extensions, voir mémoire).
+  Texture de chaque zone (`TILE` dans `Carte.jsx`) : vraie tuile de carte extraite du bundle Unity
+  `ui-images-menu-map-hires_assets_all.bundle`, recadrée/compressée en `.webp` dans `public/img/map/`.
+  Association zone ↔ tuile fiable pour le jeu de base (noms de tuiles explicites : plaza, meadow, beach…),
+  au mieux pour les extensions quand plusieurs tuiles partagent un biome sans distinction claire (ex. les
+  4 tuiles « desert » pour les 4 zones de Dunes scintillantes) — vérifié à l'œil quand possible (eau pour
+  L'Oasis, canyon rougeâtre pour Ravin ravissant, etc.), sinon assigné dans l'ordre.
 - `src/styles.css` : variables de thème `[data-theme='nuit']` et `[data-theme='chateau']`. Utiliser les variables, pas de couleurs en dur.
 - Mise en page : barre du bas sous 960 px, menu latéral + liste/fiche côte à côte au-dessus.
 
