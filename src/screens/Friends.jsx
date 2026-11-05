@@ -25,6 +25,13 @@ const JOB = Object.fromEntries(JOBS.map(([id, label, icon, ext]) => [id, { label
 
 const fmtPct = (n) => (Number.isInteger(n) ? n : n.toFixed(1));
 
+// Pas de champ "file" stocké pour les récompenses (contrairement aux meubles/recettes) : le nom de
+// fichier se déduit du nom, comme fileName() dans build-data.mjs (mêmes caractères interdits sous
+// Windows retirés, ex. Robe "Dots & Daisies"). Thumb retombe sur l'initiale si l'image n'existe pas.
+function rewardFile(name) {
+  return name.replace(/["<>:|?*]/g, '').replace(/\s+/g, ' ').trim() + '.png';
+}
+
 // Formule communautaire du wiki anglais (dreamlightvalleywiki.com/Bonuses), non confirmée
 // officiellement par Gameloft : chance de ressource bonus en te promenant avec un habitant =
 // base (20 % Jardinage, 25 % les autres rôles) + 3,5 %/niveau du compagnon actif (celui avec qui
@@ -218,8 +225,11 @@ function FriendDetail({ v, embedded }) {
             {v.rewards.map((r) => {
               const unlocked = level >= r.level;
               return (
-                <div key={r.level} class="list-row">
+                <div key={r.level + r.name} class="list-row">
                   <span class="tag" style={{ flex: 'none', background: unlocked ? 'var(--teal)' : 'var(--line)', color: unlocked ? '#14123A' : 'var(--muted)' }}>Niv. {r.level}</span>
+                  {r.type !== 'Monnaies' && (
+                    <div style={{ opacity: unlocked ? 1 : 0.6 }}><Thumb file={rewardFile(r.name)} name={r.name} /></div>
+                  )}
                   <div class="stack" style={{ gap: '2px', flex: 1 }}>
                     <span style={{ fontWeight: 800, opacity: unlocked ? 1 : 0.6 }}>{r.name}</span>
                     <span class="small muted">{[r.type, r.todo && 'nom à vérifier en jeu'].filter(Boolean).join(' · ')}</span>
