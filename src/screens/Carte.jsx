@@ -5,6 +5,7 @@ import { BIOME } from '../data/biomes.js';
 import { CROPS, FISH, GEMS, FORAGE, GEM_COLORS, RIPPLES } from '../data/resources.js';
 import { VARIANTS } from '../data/critters.js';
 import { FLOWERS } from '../data/flowers.js';
+import { WOOD, ORE, MATERIALS, ALGAE } from '../data/materials.js';
 import { availabilityLabel } from '../lib/time.js';
 import { Icon, Thumb, Seg, ExtTag } from '../ui.jsx';
 
@@ -123,12 +124,29 @@ function zoneResources(biomeId) {
   }
   return out;
 }
+// Gemmes + minerais/pierres (materials.js) dans la même section : les deux se récoltent
+// à la pioche. « *» = partout (ex. Onyx, Minerai de charbon), comme dans Resources.jsx.
 function zoneGems(biomeId) {
+  const here = (biomes) => biomes.includes(biomeId) || biomes[0] === '*';
   const out = [];
-  for (const g of GEMS) if (g.biomes.includes(biomeId)) {
+  for (const g of GEMS) if (here(g.biomes)) {
     const gc = GEM_COLORS[g.color];
     out.push({ name: g.name, file: g.file, href: '#/mines?q=' + encodeURIComponent(g.name), tag: gc?.label, tagColor: gc?.color, ring: gc?.color, price: g.price, priceLabel: 'pièces' });
   }
+  for (const o of ORE) if (here(o.biomes)) {
+    out.push({ name: o.name, file: o.file, price: o.price, priceLabel: 'pièces' });
+  }
+  return out;
+}
+
+// Bois (hache), matériaux de fouille (pelle) et algues (pêche, sans remous) : pas de métier
+// ni d'écran dédié, donc pas de lien (juste une carte d'info, comme pour les animaux).
+function zoneMaterials(biomeId) {
+  const here = (biomes) => biomes.includes(biomeId) || biomes[0] === '*';
+  const out = [];
+  for (const w of WOOD) if (here(w.biomes)) out.push({ name: w.name, file: w.file, price: w.price, priceLabel: 'pièces' });
+  for (const m of MATERIALS) if (here(m.biomes)) out.push({ name: m.name, file: m.file, price: m.price, priceLabel: 'pièces' });
+  for (const a of ALGAE) if (here(a.biomes)) out.push({ name: a.name, file: a.file, price: a.price, priceLabel: 'pièces' });
   return out;
 }
 // Fleurs décoratives (flowers.js, même source que la Cueillette), des plus abondantes aux plus
@@ -171,9 +189,11 @@ function zoneCritters(biomeId, now) {
 
 // Carte d'élément façon Cueillette (vignette + nom + étiquette(s) + prix OU horaire),
 // réutilisée pour les ressources, gemmes, fleurs, la pêche et les animaux d'une zone.
+// Sans lien (bois/minerais/matériaux/algues : pas d'écran dédié) : simple carte d'info.
 function ZoneItemCard({ it }) {
+  const Tag = it.href ? 'a' : 'div';
   return (
-    <a href={it.href} class="item">
+    <Tag href={it.href} class="item">
       <Thumb file={it.file} name={it.name} round={it.round} ring={it.ring} />
       <div class="body">
         <div class="row wrap" style={{ gap: '6px' }}>
@@ -194,7 +214,7 @@ function ZoneItemCard({ it }) {
           <span class="small" style={{ fontWeight: 900, color: it.sideColor || 'var(--muted)' }}>{it.sideText}</span>
         </div>
       )}
-    </a>
+    </Tag>
   );
 }
 
@@ -206,7 +226,7 @@ function ZoneSection({ title, items, empty }) {
       </div>
       {items.length ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '8px' }}>
-          {items.map((it) => <ZoneItemCard key={it.href} it={it} />)}
+          {items.map((it) => <ZoneItemCard key={it.href || it.name} it={it} />)}
         </div>
       ) : <div class="small muted">{empty}</div>}
     </>
@@ -227,6 +247,7 @@ export function Carte() {
   const bio = selected ? BIOME[selected.biome] : null;
   const resources = selected ? zoneResources(selected.biome) : [];
   const gems = selected ? zoneGems(selected.biome) : [];
+  const materials = selected ? zoneMaterials(selected.biome) : [];
   const flowers = selected ? zoneFlowers(selected.biome) : [];
   const fish = selected ? zoneFish(selected.biome) : [];
   const critters = selected ? zoneCritters(selected.biome, now) : [];
@@ -334,7 +355,8 @@ export function Carte() {
           </div>
           <div style={{ padding: '4px 24px 24px' }}>
             <ZoneSection title="Ressources" items={resources} empty="Pas encore de ressource recensée ici." />
-            <ZoneSection title="Gemmes" items={gems} empty="Pas encore de gemme recensée ici." />
+            <ZoneSection title="Gemmes & minerais" items={gems} empty="Pas encore de gemme recensée ici." />
+            <ZoneSection title="Bois, algues & matériaux" items={materials} empty="Pas encore de matériau recensé ici." />
             <ZoneSection title="Fleurs" items={flowers} empty="Pas encore de fleur recensée ici." />
             <ZoneSection title="Pêche" items={fish} empty="Aucun poisson recensé dans cette zone." />
             <ZoneSection title="Animaux" items={critters} empty="Pas encore d'animal recensé ici." />
