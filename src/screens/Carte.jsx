@@ -3,6 +3,7 @@ import { useStore } from '../lib/store.js';
 import { BIOME } from '../data/biomes.js';
 import { CROPS, FISH, GEMS, FORAGE } from '../data/resources.js';
 import { SPECIES } from '../data/critters.js';
+import { FLOWERS } from '../data/flowers.js';
 import { Icon, Seg, ExtTag } from '../ui.jsx';
 
 // Décor des zones (formes "dessinées à la main") : purement visuel, aucune donnée de jeu.
@@ -110,6 +111,15 @@ function zoneResources(biomeId) {
   for (const g of GEMS) if (g.biomes.includes(biomeId)) out.push({ name: g.name, type: 'gemme', href: '#/mines?q=' + encodeURIComponent(g.name) });
   return out;
 }
+// Fleurs décoratives (flowers.js, même source que la Cueillette), des plus abondantes aux plus rares.
+const RARITY_ORDER = ['abundant', 'average', 'rare', 'ultra'];
+const RARITY_LABEL = { abundant: 'Abondante', average: 'Courante', rare: 'Rare', ultra: 'Très rare' };
+function zoneFlowers(biomeId) {
+  return FLOWERS.filter((f) => f.biome === biomeId)
+    .sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity) || a.name.localeCompare(b.name, 'fr'))
+    .map((f) => ({ name: f.name, label: `${RARITY_LABEL[f.rarity]} · ${f.timer} min`, href: '#/cueillette?q=' + encodeURIComponent(f.name) }));
+}
+
 function zoneFish(biomeId) {
   return FISH.filter((f) => f.biomes.includes(biomeId)).map((f) => ({ name: f.name, href: '#/peche?q=' + encodeURIComponent(f.name) }));
 }
@@ -134,6 +144,7 @@ export function Carte() {
   const selected = map.zones.find((z) => z.id === zoneId) || null;
   const bio = selected ? BIOME[selected.biome] : null;
   const resources = selected ? zoneResources(selected.biome) : [];
+  const flowers = selected ? zoneFlowers(selected.biome) : [];
   const fish = selected ? zoneFish(selected.biome) : [];
   const critters = selected ? zoneCritters(selected.biome) : [];
 
@@ -249,6 +260,18 @@ export function Carte() {
                   </div>
                 ) : <div class="small muted">Pas encore de ressource recensée ici.</div>}
 
+                <div class="small muted" style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', margin: '14px 0 6px' }}>Fleurs</div>
+                {flowers.length ? (
+                  <div class="list-rows">
+                    {flowers.map((f) => (
+                      <a key={f.href} href={f.href} class="list-row">
+                        <span style={{ flex: 1, fontWeight: 700 }}>{f.name}</span>
+                        <span class="tag outline">{f.label}</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : <div class="small muted">Pas encore de fleur recensée ici.</div>}
+
                 <div class="small muted" style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', margin: '14px 0 6px' }}>Pêche</div>
                 {fish.length ? (
                   <div class="list-rows">
@@ -271,7 +294,7 @@ export function Carte() {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '50px 24px', minHeight: '400px' }}>
               <Icon name="search" size={28} style={{ color: 'var(--accent)', marginBottom: '14px' }} />
               <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px' }}>Choisis une zone</div>
-              <div class="small muted" style={{ marginTop: '8px', maxWidth: '240px', lineHeight: 1.5 }}>Clique sur une zone de la carte pour afficher ses ressources, sa pêche, ses animaux et plus.</div>
+              <div class="small muted" style={{ marginTop: '8px', maxWidth: '240px', lineHeight: 1.5 }}>Clique sur une zone de la carte pour afficher ses ressources, ses fleurs, sa pêche, ses animaux et plus.</div>
             </div>
           )}
         </div>
