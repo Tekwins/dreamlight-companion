@@ -60,6 +60,10 @@ Interface et textes **en français**. Répondre à Tek en français.
   25 ont pour seul nom « Design Motif » (texte générique de mydreamlightvalley.com lui-même, pas un nom d'objet
   à chercher), les autres (motifs nommés, vêtements, meubles) n'ont simplement pas de correspondance dans les
   fichiers de localisation ouverts jusqu'ici. Pas un bug, juste pas confirmé.
+  Chaque récompense affiche désormais une vignette (`<Thumb>`, repli sur l'initiale comme ailleurs dans
+  l'appli) : 93/145 meubles de récompense ont une vraie image (réutilise le bundle meubles déjà extrait) ;
+  vêtements/autocollants n'en ont pas encore (vêtements définitivement bloqués, voir mémoire — noms de
+  sprite génériques dans les fichiers du jeu, aucun lien possible avec l'objet réel).
 - **Bonus de rôle des habitants** : calculé (`roleBonus()` dans `Friends.jsx`), formule communautaire du wiki
   anglais (dreamlightvalleywiki.com/Bonuses, non confirmée par Gameloft) : base (20 % Jardinage, 25 % les autres
   rôles) + 3,5 %/niveau du compagnon actif + 1 %/niveau de chaque autre habitant sur le même rôle.
