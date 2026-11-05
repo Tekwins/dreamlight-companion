@@ -37,14 +37,14 @@ Interface et textes **en français**. Répondre à Tek en français.
   déploiement (clés VAPID, `supabase functions deploy`, planification cron) doit se faire depuis le compte Supabase
   de Tek — étapes dans `supabase/functions/daily-reminders/README.md`.
 - **Images manquantes**, toutes avec repli sur l'initiale (composant `Thumb`), pas bloquant :
-  - Habitants, souvenirs et recettes : 100 % récupérées (les 12 dernières recettes trouvées le 2026-11-05, par
-    nom traduit + ingrédients vérifiés sur le wiki anglais plutôt que par stats seules — voir `fetchImagesFromMdv()`
-    et le commentaire d'en-tête de `scrape-wiki.mjs`).
-  - Meubles (`furniture.js`) : ~365/1304 (28 %) — confirmé définitivement bloqué le 2026-11-05 (cache
-    mydreamlightvalley.com reconstruit à neuf, aucun gain). Technique manuelle possible pour Tek : voir
-    mémoire `project-data-pipeline-state` (Spécial:FilePath + navigateur réel, pas pour notre pipeline).
+  - Habitants, souvenirs, recettes et fleurs décoratives : 100 % récupérées.
+  - Meubles (`furniture.js`) : 993/1304 (76 %, contre 28 % avant le 2026-11-05) — récupérées directement depuis
+    les fichiers du jeu installé (voir mémoire `project-data-pipeline-state`, section UnityPy/LocDB, pour la
+    méthode complète si à refaire). Les 311 restants n'ont pas de nom interne reconnu (texte introuvable dans
+    les .locbin) ou pointent vers un sprite au nom ambigu (ex. « Color01 », partagé par des dizaines d'objets
+    différents) — volontairement laissés sans image plutôt que de risquer une image fausse.
   - 54 images Voie des étoiles/cosmétiques : définitivement bloquées (CDN Fandom protégé par Cloudflare, pas de
-    nom anglais connu) — ne pas retenter sans nouvelle piste.
+    nom anglais connu) — même méthode d'extraction locale potentiellement applicable si redemandé (pas tentée).
 - Historique des Voies des étoiles passées (27 voies, noms EN uniquement, pas de catégorie wiki FR) : Tek a décliné
   ce scraping une première fois — ne relancer que s'il le redemande explicitement.
 - **Récompenses d'amitié** : 147/689 proviennent de mydreamlightvalley.com ou du wiki anglais (pas du wiki FR),
