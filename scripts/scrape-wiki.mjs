@@ -10,12 +10,15 @@
 //   npm run data -- amitie    -> récompenses d'amitié sur mydreamlightvalley.com (repli du wiki FR, souvent incomplet)
 //   npm run data -- amitie-en -> récompenses d'amitié sur le wiki EN, en anglais (dernier repli, après amitie)
 //   npm run data -- fleurs-images -> images de fleurs via le wiki EN (nom_vo), sans tout retélécharger
+//   npm run data -- locdb      -> extrait la localisation FR+EN du jeu installé (sur la machine de
+//                                 Tek), pour vérifier/traduire les noms et fiabiliser le matching d'images
 //
 // Les pages brutes servent ensuite à générer les fichiers de src/data
 // (recettes complètes, habitants, quêtes, succès, Voies des étoiles).
 
 import { mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
 
 const WIKIS = {
@@ -459,6 +462,71 @@ async function fetchVillagerRewardsFromDlv() {
   console.log(Object.keys(out).length, 'habitants avec récompenses wiki EN ->', 'data/raw/dlv-friendship-rewards.json');
 }
 
+// Localisation du jeu installé (Tek, Win11, Steam) : chaque langue est un .zip de fichiers .locbin
+// (un format protobuf-like non documenté, voir parseLocbin ci-dessous) qui donne, pour un même
+// identifiant interne d'objet, le texte officiel dans chaque langue — bien plus fiable que les
+// wikis, et permet de vérifier/traduire ce qu'on a déjà (voir mémoire project-data-pipeline-state,
+// section "FR+EN localization cross-verification", 2026-11-05).
+const GAME_LOCALIZATION_DIR = 'C:/Program Files (x86)/Steam/steamapps/common/Disney Dreamlight Valley/ddv_Data/StreamingAssets/Localization';
+
+function readVarint(buf, pos) {
+  let result = 0, shift = 0, b;
+  do { b = buf[pos++]; result |= (b & 0x7f) << shift; shift += 7; } while (b & 0x80);
+  return [result, pos];
+}
+function parseLocbinEntry(bytes) {
+  let pos = 0, key = null, value = null;
+  while (pos < bytes.length) {
+    const tag = bytes[pos++];
+    if ((tag & 7) !== 2) break;
+    let len; [len, pos] = readVarint(bytes, pos);
+    const sub = bytes.subarray(pos, pos + len);
+    pos += len;
+    if ((tag >> 3) === 1) key = sub.toString('utf8');
+    else if ((tag >> 3) === 2) value = sub.toString('utf8');
+  }
+  return [key, value];
+}
+function parseLocbin(filePath) {
+  const buf = readFileSync(filePath);
+  let pos = 0;
+  const entries = [];
+  while (pos < buf.length) {
+    const tag = buf[pos++];
+    if ((tag & 7) !== 2) break;
+    let len; [len, pos] = readVarint(buf, pos);
+    const [key, value] = parseLocbinEntry(buf.subarray(pos, pos + len));
+    pos += len;
+    if (key !== null) entries.push([key, value]);
+  }
+  return entries;
+}
+
+// npm run data -- locdb : extrait + parse LocDB_fr.zip et LocDB_en-US.zip depuis le jeu installé,
+// écrit data/raw/locdb-fr.json et data/raw/locdb-en.json (triplets [fichier, clé, valeur]).
+// Sert ensuite à withLocdbTranslation() dans build-data.mjs (récompenses d'amitié) et peut être
+// réutilisé pour fiabiliser le matching d'images (meubles/fleurs), voir la mémoire du projet.
+async function fetchLocdb() {
+  if (!existsSync(GAME_LOCALIZATION_DIR)) {
+    console.warn('Jeu introuvable à', GAME_LOCALIZATION_DIR, '- rien à faire (adapter le chemin si le jeu a bougé).');
+    return;
+  }
+  for (const lang of ['fr', 'en-US']) {
+    const zip = path.join(GAME_LOCALIZATION_DIR, `LocDB_${lang}.zip`);
+    const dest = path.join('data/raw', `locdb_${lang === 'fr' ? 'fr' : 'en'}`);
+    await mkdir(dest, { recursive: true });
+    execSync(`unzip -oq "${zip}" -d "${dest}"`);
+    const files = (await readdir(dest)).filter((f) => f.endsWith('.locbin'));
+    const all = [];
+    for (const f of files) {
+      try { for (const e of parseLocbin(path.join(dest, f))) all.push([f, ...e]); } catch { /* fichier suivant */ }
+    }
+    const outFile = `data/raw/locdb-${lang === 'fr' ? 'fr' : 'en'}.json`;
+    await writeFile(outFile, JSON.stringify(all));
+    console.log(files.length, 'fichiers .locbin,', all.length, 'entrées ->', outFile);
+  }
+}
+
 async function fetchImagesFromMdv() {
   const recipesMod = await import('../src/data/recipes.js');
   const villagersMod = await import('../src/data/villagers.js');
@@ -546,4 +614,6 @@ else if (mode === 'fleurs-images') {
   await mkdir('public/img', { recursive: true });
   await fetchFlowersFromDlv();
 }
+// Extrait la localisation FR+EN du jeu installé (texte officiel par objet) : npm run data -- locdb
+else if (mode === 'locdb') await fetchLocdb();
 else await fetchPages();

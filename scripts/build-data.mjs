@@ -250,7 +250,55 @@ function withFallback(source, name, rewards) {
 }
 
 function withRewardFallbacks(name, rewards) {
-  return withFallback(enRewards, name, withFallback(mdvRewards, name, rewards));
+  return withLocdbTranslation(withFallback(enRewards, name, withFallback(mdvRewards, name, rewards)));
+}
+
+// Dernière passe, après tous les replis ci-dessus : data/raw/locdb-fr.json / locdb-en.json (généré
+// par `npm run data -- locdb`, lit la localisation du jeu installé) donne le texte officiel FR et EN
+// de chaque objet par clé interne — bien plus fiable que mydreamlightvalley.com ou le wiki EN. Pour
+// chaque récompense encore marquée todo (type ≠ Monnaies, rien à vérifier) : si son nom est déjà le
+// texte FR officiel d'un objet, on lève le todo (confirmé) ; sinon, si c'est le texte EN officiel
+// d'un objet, on le traduit vers le texte FR officiel. Voir mémoire project-data-pipeline-state,
+// section "FR+EN localization cross-verification" (2026-11-05) pour le détail de la méthode.
+const LOCDB_FR_FILE = RAW + '/../locdb-fr.json';
+const LOCDB_EN_FILE = RAW + '/../locdb-en.json';
+const LOCDB_SUFFIXES = ['_DisplayName', '_Title', '_Name'];
+function buildLocdbInternalMap(entries) {
+  const byInternal = {};
+  for (const pref of LOCDB_SUFFIXES) {
+    for (const [, key, value] of entries) {
+      if (!value || !key.endsWith(pref)) continue;
+      const internal = key.slice(0, -pref.length);
+      if (!(internal in byInternal)) byInternal[internal] = value.replace(/­/g, '').trim();
+    }
+  }
+  return byInternal;
+}
+let locdbFrIndex = null, locdbEnIndex = null, locdbInternalToFR = null;
+if (existsSync(LOCDB_FR_FILE) && existsSync(LOCDB_EN_FILE)) {
+  const frEntries = JSON.parse(await readFile(LOCDB_FR_FILE, 'utf8'));
+  const enEntries = JSON.parse(await readFile(LOCDB_EN_FILE, 'utf8'));
+  locdbInternalToFR = buildLocdbInternalMap(frEntries);
+  const internalToEN = buildLocdbInternalMap(enEntries);
+  locdbFrIndex = {};
+  for (const [internal, value] of Object.entries(locdbInternalToFR)) (locdbFrIndex[normName(value)] ||= []).push(internal);
+  locdbEnIndex = {};
+  for (const [internal, value] of Object.entries(internalToEN)) (locdbEnIndex[normName(value)] ||= []).push(internal);
+}
+
+function withLocdbTranslation(rewards) {
+  if (!locdbFrIndex) return rewards; // data/raw/locdb-*.json absent (npm run data -- locdb pas lancé) : rien à faire
+  return rewards.map((r) => {
+    if (!r.todo || r.type === 'Monnaies') return r;
+    const current = normName(r.name);
+    if (locdbFrIndex[current]?.length === 1) return { ...r, todo: undefined };
+    const enHit = locdbEnIndex[current];
+    if (enHit?.length) {
+      const frNames = new Set(enHit.map((i) => locdbInternalToFR[i]).filter(Boolean));
+      if (frNames.size === 1) return { ...r, name: [...frNames][0], todo: undefined };
+    }
+    return r;
+  });
 }
 
 async function parsePersonnages() {
