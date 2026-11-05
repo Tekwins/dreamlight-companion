@@ -21,3 +21,12 @@ export async function sendMagicLink(email) {
   const redirect = window.location.origin + window.location.pathname;
   return supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirect } });
 }
+
+// Supabase renvoie ses erreurs en anglais telles quelles (error.message) : on traduit les cas
+// courants plutôt que d'afficher "email rate limit exceeded" tel quel dans une appli en français.
+export function authErrorMessage(error) {
+  const msg = (error?.message || '').toLowerCase();
+  if (msg.includes('rate limit')) return "Trop de liens demandés pour cette adresse en peu de temps. Réessaie dans quelques minutes.";
+  if (msg.includes('invalid') && msg.includes('email')) return 'Adresse e-mail invalide.';
+  return error?.message || 'Une erreur est survenue, réessaie.';
+}

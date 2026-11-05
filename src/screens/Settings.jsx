@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { useStore, signOut, exportState, importState, pull } from '../lib/store.js';
-import { sendMagicLink } from '../lib/supabase.js';
+import { sendMagicLink, authErrorMessage } from '../lib/supabase.js';
 import { enablePush, disablePush, pushDeviceStatus, pushSupported } from '../lib/push.js';
 import { EXTENSIONS } from '../data/biomes.js';
 import { VARIANT } from '../data/critters.js';
@@ -209,7 +209,7 @@ function Login() {
     e.preventDefault();
     setState('sending');
     const { error } = await sendMagicLink(email.trim());
-    if (error) { setErr(error.message); setState('idle'); } else setState('sent');
+    if (error) { setErr(authErrorMessage(error)); setState('idle'); } else setState('sent');
   };
   if (state === 'sent') {
     return (
