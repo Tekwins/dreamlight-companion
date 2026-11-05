@@ -44,8 +44,8 @@ const TILE = {
 // animaux, disposition plausible mais pas géographiquement garantie (aucune carte officielle
 // assemblée n'existe pour les extensions, voir mémoire).
 const BASE_ZONES = [
-  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', box: { x: 0, y: 155, w: 794, h: 1003 }, cx: 397, cy: 657, caption: 'Un territoire oublié, à la lisière du mystère.',
-    outline: 'M430.7,155.0 L421.8,224.8 L253.8,244.7 L276.8,323.4 L194.5,361.6 L169.2,484.0 L183.6,566.3 L131.7,605.6 L126.7,681.3 L0.0,715.2 L88.1,825.1 L159.8,854.7 L209.7,839.5 L202.3,746.0 L285.7,780.3 L232.7,935.8 L263.5,968.2 L220.2,1046.5 L234.7,1112.4 L385.5,1119.4 L434.6,1157.6 L467.4,1151.4 L467.0,1122.9 L754.6,1121.4 L793.6,1031.7 L784.3,976.3 L767.1,976.0 L785.8,924.9 L748.0,889.0 L785.4,878.5 L736.7,859.4 L734.8,805.2 L705.1,797.0 L736.3,782.2 L723.8,737.0 L672.0,711.7 L714.5,624.3 L773.7,578.0 L759.3,388.5 L633.8,231.0 L526.2,171.8 Z' },
+  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', box: { x: 0, y: 40, w: 794, h: 1003 }, cx: 397, cy: 542, caption: 'Un territoire oublié, à la lisière du mystère.',
+    outline: 'M430.7,40.0 L421.8,109.8 L253.8,129.7 L276.8,208.4 L194.5,246.6 L169.2,369.0 L183.6,451.3 L131.7,490.6 L126.7,566.3 L0.0,600.2 L88.1,710.1 L159.8,739.7 L209.7,724.5 L202.3,631.0 L285.7,665.3 L232.7,820.8 L263.5,853.2 L220.2,931.5 L234.7,997.4 L385.5,1004.4 L434.6,1042.6 L467.4,1036.4 L467.0,1007.9 L754.6,1006.4 L793.6,916.7 L784.3,861.3 L767.1,861.0 L785.8,809.9 L748.0,774.0 L785.4,763.5 L736.7,744.4 L734.8,690.2 L705.1,682.0 L736.3,667.2 L723.8,622.0 L672.0,596.7 L714.5,509.3 L773.7,463.0 L759.3,273.5 L633.8,116.0 L526.2,56.8 Z' },
   { id: 'plateau', name: 'Plateau ensoleillé', l1: 'PLATEAU', l2: 'ENSOLEILLÉ', biome: 'plateau', box: { x: 118, y: 609, w: 764, h: 611 }, cx: 500, cy: 915, caption: "Un plateau baigné de soleil, idéal pour les cultures d'été.",
     outline: 'M858.2,626.1 L825.9,609.0 L797.8,641.3 L731.5,649.5 L682.4,610.9 L630.2,623.8 L633.3,643.7 L667.2,660.4 L648.5,710.3 L674.2,766.4 L637.2,856.8 L346.8,858.8 L348.4,888.0 L317.6,891.5 L270.4,854.1 L118.0,842.0 L144.1,882.9 L194.0,878.3 L176.9,921.1 L209.6,947.2 L210.4,1077.4 L185.4,1097.6 L188.6,1128.0 L260.7,1162.3 L289.9,1209.1 L315.6,1179.5 L340.6,1186.9 L351.9,1219.6 L382.3,1205.6 L380.3,1160.8 L403.3,1151.4 L410.7,1174.0 L477.8,1154.1 L544.0,1165.1 L571.7,1150.2 L626.3,1158.0 L634.5,1120.2 L740.5,1133.9 L771.3,1121.4 L786.1,1010.4 L776.4,916.8 L810.7,911.8 L803.3,840.1 L834.8,839.3 L838.3,815.1 L862.9,817.1 L881.6,780.1 L881.6,703.3 Z' },
   { id: 'bayou', name: 'Bayou de la confiance', l1: 'BAYOU DE LA', l2: 'CONFIANCE', biome: 'bayou', box: { x: 282, y: 1145, w: 508, h: 583 }, cx: 536, cy: 1437, caption: 'Eaux calmes et reflets verts, royaume des crocodiles.',
@@ -179,13 +179,18 @@ export function Carte() {
 
               // Jeu de base : l'image COMPLÈTE de la tuile (pas de recadrage), à sa taille
               // réelle (proportions natives) — juste positionnée pour s'approcher au mieux
-              // de la vraie carte, sans contour « dessiné main ».
+              // de la vraie carte, sans contour « dessiné main ». Zone cliquable = vrai
+              // contour de la tuile (pas son rectangle) : sur les images qui se chevauchent,
+              // le clic cible ainsi ce qui est réellement visible à cet endroit plutôt que
+              // systématiquement la tuile dont le rectangle d'origine passe par-dessus.
               if (zone.box) {
                 const { x, y, w, h } = zone.box;
                 return (
                   <g key={zone.id} onClick={() => setZoneId(zone.id)} style={{ cursor: 'pointer' }}>
-                    <rect x={x} y={y} width={w} height={h} fill="transparent" />
-                    {tile && <image href={`img/map/${tile}`} x={x} y={y} width={w} height={h} preserveAspectRatio="xMidYMid meet" />}
+                    {zone.outline
+                      ? <path d={zone.outline} fill="transparent" />
+                      : <rect x={x} y={y} width={w} height={h} fill="transparent" />}
+                    {tile && <image href={`img/map/${tile}`} x={x} y={y} width={w} height={h} preserveAspectRatio="xMidYMid meet" style={{ pointerEvents: 'none' }} />}
                     {isSel && zone.outline && <path d={zone.outline} fill="none" stroke="#FFE8A3" stroke-width="7" stroke-linejoin="round" filter="url(#map-glow)" opacity="0.9" />}
                     {isSel && zone.outline && <path d={zone.outline} fill="none" stroke="#FFE8A3" stroke-width="4" stroke-linejoin="round" />}
                   </g>
