@@ -32,25 +32,26 @@ const TILE = {
 // Zones affichées sur la carte. Le jeu de base reprend tel quel les 8 biomes réels
 // (biomes.js), affiché avec l'image COMPLÈTE de chaque tuile extraite (pas de recadrage) —
 // chacune garde son propre décor (rochers, rivière, pont…) tel qu'il sort du jeu. Position de
-// chaque image (`box`) calée au jugé d'après la carte officielle (static.wikia.nocookie.net/
-// .../Carte_DDV.png) et les éléments visuels de raccord (pont, rivière) qui sortent des bords
-// de chaque tuile : aucune métadonnée de position exploitable n'est stockée avec les sprites
-// (chacun a sa propre texture indépendante, sans rect partagé dans un atlas commun), donc pas
-// de montage pixel-exact possible, juste un assemblage le plus fidèle possible à l'œil.
-// Les extensions ont des lieux bien plus précis que nos biomes actuels (ex. « L'Oasis » dans
-// Dunes scintillantes) : pas encore une donnée de jeu confirmée dans src/data, donc gardées
-// ici en formes décoratives (`blob`) — chaque zone est juste rattachée au biome réel le plus
-// proche pour les ressources/pêche/animaux, disposition plausible mais pas géographiquement
-// garantie (aucune carte officielle assemblée n'existe pour les extensions, voir mémoire).
+// chaque image (`box`) retrouvée par recalage automatique (OpenCV, corrélation croisée avec
+// masque alpha) contre la carte officielle (static.wikia.nocookie.net/.../Carte_DDV.png) —
+// chaque tuile s'y reconnaît avec un score de confiance ≥ 0,96 au même facteur d'échelle
+// (~0,39), ce qui confirme que cette image officielle est composée des mêmes tuiles ; les
+// coordonnées ci-dessous sont directement celles trouvées dans l'image de référence
+// (1920×1744), reprises telles quelles comme viewBox. Les extensions ont des lieux bien plus
+// précis que nos biomes actuels (ex. « L'Oasis » dans Dunes scintillantes) : pas encore une
+// donnée de jeu confirmée dans src/data, donc gardées ici en formes décoratives (`blob`) —
+// chaque zone est juste rattachée au biome réel le plus proche pour les ressources/pêche/
+// animaux, disposition plausible mais pas géographiquement garantie (aucune carte officielle
+// assemblée n'existe pour les extensions, voir mémoire).
 const BASE_ZONES = [
-  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', box: { x: 0, y: 0, w: 261, h: 330 }, cx: 130, cy: 290, icon: 'peak', caption: 'Un territoire oublié, à la lisière du mystère.' },
-  { id: 'plateau', name: 'Plateau ensoleillé', l1: 'PLATEAU', l2: 'ENSOLEILLÉ', biome: 'plateau', box: { x: 20, y: 330, w: 330, h: 264 }, cx: 185, cy: 460, icon: 'sun', caption: "Un plateau baigné de soleil, idéal pour les cultures d'été." },
-  { id: 'bayou', name: 'Bayou de la confiance', l1: 'BAYOU DE LA', l2: 'CONFIANCE', biome: 'bayou', box: { x: 60, y: 594, w: 288, h: 330 }, cx: 204, cy: 760, icon: 'leaf', caption: 'Eaux calmes et reflets verts, royaume des crocodiles.' },
-  { id: 'esplanade', name: 'Esplanade', l1: 'ESPLANADE', l2: '', biome: 'esplanade', box: { x: 270, y: 20, w: 321, h: 330 }, cx: 430, cy: 268, icon: 'castle', caption: 'Le cœur de la vallée, là où bat la vie du village.' },
-  { id: 'prairie', name: 'Prairie tranquille', l1: 'PRAIRIE', l2: 'TRANQUILLE', biome: 'prairie', box: { x: 266, y: 350, w: 330, h: 161 }, cx: 431, cy: 430, icon: 'sun', caption: 'De vastes champs à perte de vue, parfaits pour les récoltes.' },
-  { id: 'hauteurs', name: 'Hauteurs glacées', l1: 'HAUTEURS', l2: 'GLACÉES', biome: 'hauteurs', box: { x: 590, y: 10, w: 330, h: 299 }, cx: 755, cy: 160, icon: 'snow', caption: 'Neiges éternelles et vents glacés sur les hauteurs.' },
-  { id: 'foret', name: 'Forêt du courage', l1: 'FORÊT DU', l2: 'COURAGE', biome: 'foret', box: { x: 615, y: 255, w: 267, h: 330 }, cx: 748, cy: 420, icon: 'leaf', caption: 'Une canopée dense où rôdent ratons laveurs et brochets.' },
-  { id: 'plage', name: 'Plage enchantée', l1: 'PLAGE', l2: 'ENCHANTÉE', biome: 'plage', box: { x: 850, y: 335, w: 330, h: 253 }, cx: 1015, cy: 461, icon: 'wave', caption: 'Sable doré et vagues douces, avec quelques îlots au large.' }
+  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', box: { x: 0, y: 155, w: 794, h: 1003 }, cx: 397, cy: 657, icon: 'peak', caption: 'Un territoire oublié, à la lisière du mystère.' },
+  { id: 'plateau', name: 'Plateau ensoleillé', l1: 'PLATEAU', l2: 'ENSOLEILLÉ', biome: 'plateau', box: { x: 118, y: 609, w: 764, h: 611 }, cx: 500, cy: 915, icon: 'sun', caption: "Un plateau baigné de soleil, idéal pour les cultures d'été." },
+  { id: 'bayou', name: 'Bayou de la confiance', l1: 'BAYOU DE LA', l2: 'CONFIANCE', biome: 'bayou', box: { x: 282, y: 1145, w: 508, h: 583 }, cx: 536, cy: 1437, icon: 'leaf', caption: 'Eaux calmes et reflets verts, royaume des crocodiles.' },
+  { id: 'esplanade', name: 'Esplanade', l1: 'ESPLANADE', l2: '', biome: 'esplanade', box: { x: 772, y: 719, w: 391, h: 402 }, cx: 968, cy: 1033, icon: 'castle', caption: 'Le cœur de la vallée, là où bat la vie du village.' },
+  { id: 'prairie', name: 'Prairie tranquille', l1: 'PRAIRIE', l2: 'TRANQUILLE', biome: 'prairie', box: { x: 618, y: 1079, w: 638, h: 310 }, cx: 937, cy: 1234, icon: 'sun', caption: 'De vastes champs à perte de vue, parfaits pour les récoltes.' },
+  { id: 'hauteurs', name: 'Hauteurs glacées', l1: 'HAUTEURS', l2: 'GLACÉES', biome: 'hauteurs', box: { x: 1058, y: 114, w: 735, h: 666 }, cx: 1426, cy: 447, icon: 'snow', caption: 'Neiges éternelles et vents glacés sur les hauteurs.' },
+  { id: 'foret', name: 'Forêt du courage', l1: 'FORÊT DU', l2: 'COURAGE', biome: 'foret', box: { x: 1097, y: 468, w: 538, h: 664 }, cx: 1366, cy: 800, icon: 'leaf', caption: 'Une canopée dense où rôdent ratons laveurs et brochets.' },
+  { id: 'plage', name: 'Plage enchantée', l1: 'PLAGE', l2: 'ENCHANTÉE', biome: 'plage', box: { x: 765, y: 940, w: 964, h: 739 }, cx: 1247, cy: 1310, icon: 'wave', caption: 'Sable doré et vagues douces, avec quelques îlots au large.' }
 ];
 const RIFT_ZONES = [
   { id: 'la-cour', name: 'La Cour', l1: 'LA COUR', l2: '', biome: 'port', cx: 660, cy: 165, blob: 3, scale: 1.3, rot: 0, icon: 'castle', caption: "Une cour de pierre ancienne, porte d'entrée du port." },
@@ -83,7 +84,7 @@ const RANCH_ZONES = [
 ];
 
 const MAPS = [
-  { id: 'base', label: 'Jeu de base', ext: null, zones: BASE_ZONES, viewBox: '0 0 1260 960', river: null },
+  { id: 'base', label: 'Jeu de base', ext: null, zones: BASE_ZONES, viewBox: '0 0 1920 1744', river: null },
   { id: 'rift', label: 'A Rift in Time', ext: 'rift', zones: RIFT_ZONES, viewBox: '0 0 1000 800', river: 'M 380,250 C 420,320 380,380 420,450 C 460,520 520,560 560,600 C 600,650 630,660 650,700' },
   { id: 'vale', label: 'The Storybook Vale', ext: 'vale', zones: VALE_ZONES, viewBox: '0 0 1000 800', river: 'M 330,350 C 300,420 260,480 270,560 C 275,620 300,660 320,700' },
   { id: 'ranch', label: 'Wishblossom Ranch', ext: 'ranch', zones: RANCH_ZONES, viewBox: '0 0 1000 800', river: 'M 680,220 C 600,280 520,340 470,420 C 420,480 340,500 280,540' }
