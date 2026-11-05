@@ -44,43 +44,51 @@ const TILE = {
 // animaux, disposition plausible mais pas géographiquement garantie (aucune carte officielle
 // assemblée n'existe pour les extensions, voir mémoire).
 const BASE_ZONES = [
-  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', box: { x: 0, y: 155, w: 794, h: 1003 }, cx: 397, cy: 657, icon: 'peak', caption: 'Un territoire oublié, à la lisière du mystère.' },
-  { id: 'plateau', name: 'Plateau ensoleillé', l1: 'PLATEAU', l2: 'ENSOLEILLÉ', biome: 'plateau', box: { x: 118, y: 609, w: 764, h: 611 }, cx: 500, cy: 915, icon: 'sun', caption: "Un plateau baigné de soleil, idéal pour les cultures d'été." },
-  { id: 'bayou', name: 'Bayou de la confiance', l1: 'BAYOU DE LA', l2: 'CONFIANCE', biome: 'bayou', box: { x: 282, y: 1145, w: 508, h: 583 }, cx: 536, cy: 1437, icon: 'leaf', caption: 'Eaux calmes et reflets verts, royaume des crocodiles.' },
-  { id: 'esplanade', name: 'Esplanade', l1: 'ESPLANADE', l2: '', biome: 'esplanade', box: { x: 772, y: 719, w: 391, h: 402 }, cx: 968, cy: 1033, icon: 'castle', caption: 'Le cœur de la vallée, là où bat la vie du village.' },
-  { id: 'prairie', name: 'Prairie tranquille', l1: 'PRAIRIE', l2: 'TRANQUILLE', biome: 'prairie', box: { x: 618, y: 1079, w: 638, h: 310 }, cx: 937, cy: 1234, icon: 'sun', caption: 'De vastes champs à perte de vue, parfaits pour les récoltes.' },
-  { id: 'hauteurs', name: 'Hauteurs glacées', l1: 'HAUTEURS', l2: 'GLACÉES', biome: 'hauteurs', box: { x: 1058, y: 114, w: 735, h: 666 }, cx: 1426, cy: 447, icon: 'snow', caption: 'Neiges éternelles et vents glacés sur les hauteurs.' },
-  { id: 'foret', name: 'Forêt du courage', l1: 'FORÊT DU', l2: 'COURAGE', biome: 'foret', box: { x: 1097, y: 468, w: 538, h: 664 }, cx: 1366, cy: 800, icon: 'leaf', caption: 'Une canopée dense où rôdent ratons laveurs et brochets.' },
-  { id: 'plage', name: 'Plage enchantée', l1: 'PLAGE', l2: 'ENCHANTÉE', biome: 'plage', box: { x: 765, y: 940, w: 964, h: 739 }, cx: 1247, cy: 1310, icon: 'wave', caption: 'Sable doré et vagues douces, avec quelques îlots au large.' }
+  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', box: { x: 0, y: 155, w: 794, h: 1003 }, cx: 397, cy: 657, caption: 'Un territoire oublié, à la lisière du mystère.',
+    outline: 'M430.7,155.0 L421.8,224.8 L253.8,244.7 L276.8,323.4 L194.5,361.6 L169.2,484.0 L183.6,566.3 L131.7,605.6 L126.7,681.3 L0.0,715.2 L88.1,825.1 L159.8,854.7 L209.7,839.5 L202.3,746.0 L285.7,780.3 L232.7,935.8 L263.5,968.2 L220.2,1046.5 L234.7,1112.4 L385.5,1119.4 L434.6,1157.6 L467.4,1151.4 L467.0,1122.9 L754.6,1121.4 L793.6,1031.7 L784.3,976.3 L767.1,976.0 L785.8,924.9 L748.0,889.0 L785.4,878.5 L736.7,859.4 L734.8,805.2 L705.1,797.0 L736.3,782.2 L723.8,737.0 L672.0,711.7 L714.5,624.3 L773.7,578.0 L759.3,388.5 L633.8,231.0 L526.2,171.8 Z' },
+  { id: 'plateau', name: 'Plateau ensoleillé', l1: 'PLATEAU', l2: 'ENSOLEILLÉ', biome: 'plateau', box: { x: 118, y: 609, w: 764, h: 611 }, cx: 500, cy: 915, caption: "Un plateau baigné de soleil, idéal pour les cultures d'été.",
+    outline: 'M858.2,626.1 L825.9,609.0 L797.8,641.3 L731.5,649.5 L682.4,610.9 L630.2,623.8 L633.3,643.7 L667.2,660.4 L648.5,710.3 L674.2,766.4 L637.2,856.8 L346.8,858.8 L348.4,888.0 L317.6,891.5 L270.4,854.1 L118.0,842.0 L144.1,882.9 L194.0,878.3 L176.9,921.1 L209.6,947.2 L210.4,1077.4 L185.4,1097.6 L188.6,1128.0 L260.7,1162.3 L289.9,1209.1 L315.6,1179.5 L340.6,1186.9 L351.9,1219.6 L382.3,1205.6 L380.3,1160.8 L403.3,1151.4 L410.7,1174.0 L477.8,1154.1 L544.0,1165.1 L571.7,1150.2 L626.3,1158.0 L634.5,1120.2 L740.5,1133.9 L771.3,1121.4 L786.1,1010.4 L776.4,916.8 L810.7,911.8 L803.3,840.1 L834.8,839.3 L838.3,815.1 L862.9,817.1 L881.6,780.1 L881.6,703.3 Z' },
+  { id: 'bayou', name: 'Bayou de la confiance', l1: 'BAYOU DE LA', l2: 'CONFIANCE', biome: 'bayou', box: { x: 282, y: 1145, w: 508, h: 583 }, cx: 536, cy: 1437, caption: 'Eaux calmes et reflets verts, royaume des crocodiles.',
+    outline: 'M379.8,1158.2 L377.8,1203.5 L342.4,1212.8 L341.2,1297.4 L325.2,1285.3 L308.1,1298.2 L340.8,1355.8 L326.0,1390.9 L335.4,1412.7 L303.8,1364.4 L284.7,1377.7 L296.4,1393.6 L282.0,1421.3 L289.0,1444.7 L341.6,1449.4 L341.6,1568.6 L311.2,1578.4 L291.7,1616.2 L319.4,1709.3 L363.4,1722.5 L375.5,1703.4 L465.9,1671.5 L467.4,1697.6 L517.7,1708.5 L543.4,1670.7 L591.3,1670.3 L585.9,1706.6 L619.0,1719.4 L645.1,1700.7 L631.4,1669.9 L691.0,1686.3 L764.3,1674.6 L777.9,1581.1 L772.9,1376.5 L789.6,1374.9 L789.6,1348.0 L759.2,1346.1 L751.0,1311.0 L732.0,1312.2 L721.8,1335.2 L711.7,1292.3 L676.2,1290.0 L697.7,1284.1 L695.3,1260.7 L627.5,1259.2 L625.6,1156.3 L460.0,1150.5 L414.5,1171.9 L409.4,1145.0 Z' },
+  { id: 'esplanade', name: 'Esplanade', l1: 'ESPLANADE', l2: '', biome: 'esplanade', box: { x: 772, y: 719, w: 391, h: 402 }, cx: 968, cy: 1033, caption: 'Le cœur de la vallée, là où bat la vie du village.',
+    outline: 'M803.5,837.4 L810.9,908.3 L772.0,909.5 L782.5,1001.8 L775.1,1089.8 L804.7,1094.9 L810.9,1115.9 L819.1,1089.1 L921.2,1082.8 L932.8,1109.7 L981.5,1120.6 L1001.4,1108.5 L1010.7,1084.4 L1030.6,1083.2 L1053.6,1099.2 L1110.0,1082.4 L1120.9,1115.5 L1126.0,1098.8 L1145.1,1097.6 L1157.2,1120.6 L1159.9,1033.7 L1145.1,1005.3 L1157.9,980.0 L1157.2,901.3 L1150.1,915.7 L1124.1,910.3 L1124.4,873.6 L1142.0,832.4 L1119.0,820.7 L1133.8,799.2 L1115.9,803.9 L1118.6,784.4 L1097.2,790.3 L1050.5,767.7 L1022.4,800.8 L1000.6,797.7 L980.4,772.8 L982.3,719.0 L967.5,727.2 L949.2,719.0 L950.8,776.3 L916.5,796.9 L884.2,789.5 L862.0,816.0 L838.2,814.0 L832.8,839.0 Z' },
+  { id: 'prairie', name: 'Prairie tranquille', l1: 'PRAIRIE', l2: 'TRANQUILLE', biome: 'prairie', box: { x: 618, y: 1079, w: 638, h: 310 }, cx: 937, cy: 1234, caption: 'De vastes champs à perte de vue, parfaits pour les récoltes.',
+    outline: 'M625.0,1123.3 L618.0,1182.9 L627.4,1260.6 L693.3,1261.0 L696.0,1284.0 L674.2,1287.9 L713.2,1296.4 L722.1,1335.7 L733.0,1315.9 L753.7,1315.1 L760.7,1347.8 L898.4,1347.8 L954.5,1388.6 L991.2,1382.8 L1030.6,1348.2 L1111.7,1341.9 L1145.2,1362.2 L1176.1,1343.9 L1178.0,1250.5 L1192.8,1224.1 L1183.9,1193.0 L1252.1,1166.1 L1216.2,1161.8 L1215.8,1151.3 L1255.6,1129.2 L1159.3,1121.0 L1150.7,1096.1 L1120.7,1092.6 L1115.2,1079.0 L986.1,1079.0 L978.7,1110.5 L947.1,1109.3 L934.7,1087.9 L940.9,1079.0 L813.8,1079.0 L807.1,1089.9 L775.6,1087.9 L772.4,1119.1 L750.6,1129.6 L712.8,1118.7 Z' },
+  { id: 'hauteurs', name: 'Hauteurs glacées', l1: 'HAUTEURS', l2: 'GLACÉES', biome: 'hauteurs', box: { x: 1058, y: 114, w: 735, h: 666 }, cx: 1426, cy: 447, caption: 'Neiges éternelles et vents glacés sur les hauteurs.',
+    outline: 'M1065.0,235.7 L1075.9,335.1 L1120.0,361.6 L1185.1,371.4 L1274.4,335.5 L1374.6,357.7 L1320.0,417.8 L1279.1,388.9 L1249.1,405.3 L1233.1,439.6 L1250.2,469.2 L1212.8,526.5 L1247.1,573.7 L1280.6,564.4 L1296.2,593.6 L1352.4,609.6 L1395.3,592.8 L1407.8,682.1 L1438.2,688.0 L1416.3,720.3 L1543.1,712.2 L1541.9,741.8 L1555.5,725.4 L1623.0,767.1 L1713.5,766.4 L1765.3,634.9 L1754.4,599.1 L1725.2,586.2 L1758.7,531.2 L1721.3,454.0 L1792.6,429.1 L1780.1,381.9 L1739.2,407.6 L1713.5,399.8 L1697.5,425.9 L1659.6,417.8 L1686.9,396.7 L1680.7,363.6 L1726.3,367.8 L1776.6,333.9 L1783.3,266.9 L1714.6,138.6 L1660.4,115.9 L1528.2,119.5 L1464.7,174.8 L1460.4,208.4 L1373.8,232.9 L1346.5,282.4 L1356.7,300.4 L1293.5,293.4 L1325.5,232.1 L1280.3,174.8 L1224.5,147.5 L1185.9,152.6 L1110.2,224.7 Z' },
+  { id: 'foret', name: 'Forêt du courage', l1: 'FORÊT DU', l2: 'COURAGE', biome: 'foret', box: { x: 1097, y: 468, w: 538, h: 664 }, cx: 1366, cy: 800, caption: 'Une canopée dense où rôdent ratons laveurs et brochets.',
+    outline: 'M1185.1,468.0 L1141.8,494.1 L1156.3,530.0 L1129.0,531.1 L1111.0,550.2 L1128.2,604.4 L1106.4,635.9 L1119.6,669.5 L1097.0,720.5 L1097.0,770.8 L1128.6,777.0 L1136.8,799.2 L1118.4,816.8 L1138.3,843.3 L1119.6,896.2 L1130.1,917.7 L1156.6,921.6 L1143.4,1005.7 L1159.0,1032.2 L1158.2,1117.6 L1228.4,1131.6 L1304.8,1120.7 L1311.0,1098.5 L1350.8,1084.1 L1391.0,1038.1 L1465.0,1020.2 L1483.3,992.9 L1567.9,988.2 L1569.9,965.2 L1634.6,918.5 L1634.6,899.4 L1589.8,848.7 L1598.4,764.5 L1576.1,733.0 L1562.9,738.4 L1543.8,712.3 L1488.0,711.5 L1485.7,724.4 L1422.9,723.2 L1417.1,703.8 L1437.3,706.5 L1440.5,687.8 L1408.1,681.5 L1399.1,592.7 L1350.4,607.1 L1343.0,591.1 L1294.3,591.1 L1287.2,562.3 L1261.1,561.9 L1254.5,575.5 L1244.0,549.4 L1181.6,556.8 L1177.3,544.8 L1207.7,519.4 L1206.2,478.9 Z' },
+  { id: 'plage', name: 'Plage enchantée', l1: 'PLAGE', l2: 'ENCHANTÉE', biome: 'plage', box: { x: 765, y: 940, w: 964, h: 739 }, cx: 1247, cy: 1310, caption: 'Sable doré et vagues douces, avec quelques îlots au large.',
+    outline: 'M1675.6,950.9 L1588.2,944.7 L1550.8,989.9 L1509.8,991.1 L1496.2,970.0 L1309.0,1095.5 L1303.5,1119.7 L1222.4,1137.2 L1214.6,1161.0 L1252.5,1163.7 L1189.3,1179.3 L1192.0,1228.4 L1171.0,1247.5 L1182.3,1322.0 L1160.8,1350.8 L1070.0,1327.0 L956.1,1378.5 L899.1,1344.2 L790.7,1341.5 L772.0,1376.9 L774.7,1586.6 L890.2,1599.5 L1100.0,1568.7 L1276.6,1598.3 L1370.6,1647.8 L1545.7,1664.2 L1651.4,1625.2 L1718.5,1514.9 L1719.6,1443.2 L1638.9,1260.4 L1552.3,1225.7 L1548.8,1196.5 L1628.4,1108.0 Z' }
 ];
 const RIFT_ZONES = [
-  { id: 'la-cour', name: 'La Cour', l1: 'LA COUR', l2: '', biome: 'port', cx: 660, cy: 165, blob: 3, scale: 1.3, rot: 0, icon: 'castle', caption: "Une cour de pierre ancienne, porte d'entrée du port." },
-  { id: 'les-quais', name: 'Les Quais', l1: 'LES QUAIS', l2: '', biome: 'port', cx: 800, cy: 250, blob: 0, scale: 1.45, rot: 8, icon: 'wave', caption: "Pontons de bois où accostent les navires d'autrefois." },
-  { id: 'la-promenade', name: 'La Promenade', l1: 'LA', l2: 'PROMENADE', biome: 'port', cx: 810, cy: 390, blob: 1, scale: 1.45, rot: -5, icon: 'wave', caption: 'Une allée dallée longeant la mer scintillante.' },
-  { id: 'le-belvedere', name: 'Le Belvédère', l1: 'LE', l2: 'BELVÉDÈRE', biome: 'port', cx: 670, cy: 470, blob: 3, scale: 1.3, rot: 0, icon: 'wave', caption: 'Un promontoire offrant une vue sur tout le rivage.' },
-  { id: 'loasis', name: "L'Oasis", l1: "L'OASIS", l2: '', biome: 'dunes', cx: 400, cy: 350, blob: 0, scale: 1.25, rot: 0, icon: 'wave', caption: "Une étendue d'eau fraîche au cœur des dunes." },
-  { id: 'le-desert', name: 'Le Désert', l1: 'LE DÉSERT', l2: '', biome: 'dunes', cx: 260, cy: 210, blob: 1, scale: 1.7, rot: 0, icon: 'sun', caption: 'Des dunes dorées à perte de vue.' },
-  { id: 'les-plaines', name: 'Les Plaines', l1: 'LES PLAINES', l2: '', biome: 'dunes', cx: 260, cy: 90, blob: 0, scale: 1.4, rot: -6, icon: 'sun', caption: 'Un désert de sable fin balayé par le vent.' },
-  { id: 'les-ruines', name: 'Les Ruines', l1: 'LES RUINES', l2: '', biome: 'dunes', cx: 150, cy: 330, blob: 4, scale: 1.3, rot: 5, icon: 'peak', caption: "Vestiges d'une civilisation disparue, à moitié ensevelis." },
-  { id: 'la-lisiere', name: 'La Lisière', l1: 'LA LISIÈRE', l2: '', biome: 'meandres', cx: 380, cy: 430, blob: 2, scale: 1.4, rot: 0, icon: 'leaf', caption: 'La frontière entre sable et végétation sauvage.' },
-  { id: 'le-bosquet', name: 'Le Bosquet', l1: 'LE BOSQUET', l2: '', biome: 'meandres', cx: 300, cy: 640, blob: 0, scale: 1.3, rot: 0, icon: 'leaf', caption: 'Un bosquet touffu au cœur des méandres.' },
-  { id: 'les-pres', name: 'Les Prés', l1: 'LES PRÉS', l2: '', biome: 'meandres', cx: 510, cy: 660, blob: 1, scale: 1.35, rot: 0, icon: 'leaf', caption: 'Des prairies sauvages nichées entre les méandres.' },
-  { id: 'le-lagon', name: 'Le Lagon', l1: 'LE LAGON', l2: '', biome: 'meandres', cx: 640, cy: 610, blob: 3, scale: 1.25, rot: 0, icon: 'wave', caption: 'Une eau calme et turquoise, blottie dans la jungle.' }
+  { id: 'la-cour', name: 'La Cour', l1: 'LA COUR', l2: '', biome: 'port', cx: 660, cy: 165, blob: 3, scale: 1.3, rot: 0, caption: "Une cour de pierre ancienne, porte d'entrée du port." },
+  { id: 'les-quais', name: 'Les Quais', l1: 'LES QUAIS', l2: '', biome: 'port', cx: 800, cy: 250, blob: 0, scale: 1.45, rot: 8, caption: "Pontons de bois où accostent les navires d'autrefois." },
+  { id: 'la-promenade', name: 'La Promenade', l1: 'LA', l2: 'PROMENADE', biome: 'port', cx: 810, cy: 390, blob: 1, scale: 1.45, rot: -5, caption: 'Une allée dallée longeant la mer scintillante.' },
+  { id: 'le-belvedere', name: 'Le Belvédère', l1: 'LE', l2: 'BELVÉDÈRE', biome: 'port', cx: 670, cy: 470, blob: 3, scale: 1.3, rot: 0, caption: 'Un promontoire offrant une vue sur tout le rivage.' },
+  { id: 'loasis', name: "L'Oasis", l1: "L'OASIS", l2: '', biome: 'dunes', cx: 400, cy: 350, blob: 0, scale: 1.25, rot: 0, caption: "Une étendue d'eau fraîche au cœur des dunes." },
+  { id: 'le-desert', name: 'Le Désert', l1: 'LE DÉSERT', l2: '', biome: 'dunes', cx: 260, cy: 210, blob: 1, scale: 1.7, rot: 0, caption: 'Des dunes dorées à perte de vue.' },
+  { id: 'les-plaines', name: 'Les Plaines', l1: 'LES PLAINES', l2: '', biome: 'dunes', cx: 260, cy: 90, blob: 0, scale: 1.4, rot: -6, caption: 'Un désert de sable fin balayé par le vent.' },
+  { id: 'les-ruines', name: 'Les Ruines', l1: 'LES RUINES', l2: '', biome: 'dunes', cx: 150, cy: 330, blob: 4, scale: 1.3, rot: 5, caption: "Vestiges d'une civilisation disparue, à moitié ensevelis." },
+  { id: 'la-lisiere', name: 'La Lisière', l1: 'LA LISIÈRE', l2: '', biome: 'meandres', cx: 380, cy: 430, blob: 2, scale: 1.4, rot: 0, caption: 'La frontière entre sable et végétation sauvage.' },
+  { id: 'le-bosquet', name: 'Le Bosquet', l1: 'LE BOSQUET', l2: '', biome: 'meandres', cx: 300, cy: 640, blob: 0, scale: 1.3, rot: 0, caption: 'Un bosquet touffu au cœur des méandres.' },
+  { id: 'les-pres', name: 'Les Prés', l1: 'LES PRÉS', l2: '', biome: 'meandres', cx: 510, cy: 660, blob: 1, scale: 1.35, rot: 0, caption: 'Des prairies sauvages nichées entre les méandres.' },
+  { id: 'le-lagon', name: 'Le Lagon', l1: 'LE LAGON', l2: '', biome: 'meandres', cx: 640, cy: 610, blob: 3, scale: 1.25, rot: 0, caption: 'Une eau calme et turquoise, blottie dans la jungle.' }
 ];
 const VALE_ZONES = [
-  { id: 'bibliotheque', name: 'Bibliothèque du savoir', l1: 'BIBLIOTHÈQUE', l2: 'DU SAVOIR', biome: 'reliure', cx: 480, cy: 230, blob: 2, scale: 1.4, rot: 0, icon: 'book', caption: 'Un sanctuaire de récits et de pages anciennes.' },
-  { id: 'chutes-theiere', name: 'Chutes de la Théière', l1: 'CHUTES DE LA', l2: 'THÉIÈRE', biome: 'reliure', cx: 340, cy: 410, blob: 0, scale: 1.3, rot: 0, icon: 'wave', caption: "Une cascade fantaisiste tout droit sortie d'un conte." },
-  { id: 'champs-elysees', name: 'Champs Élysées', l1: 'CHAMPS', l2: 'ÉLYSÉES', biome: 'mythopie', cx: 660, cy: 440, blob: 1, scale: 1.5, rot: 0, icon: 'sun', caption: 'Des champs dorés inspirés des mythes grecs.' },
-  { id: 'mont-olympe', name: 'Mont Olympe', l1: 'MONT', l2: 'OLYMPE', biome: 'mythopie', cx: 740, cy: 240, blob: 2, scale: 1.55, rot: -4, icon: 'peak', caption: 'Le sommet légendaire où résident les dieux.' },
-  { id: 'bois-sauvages', name: 'Bois sauvages', l1: 'BOIS', l2: 'SAUVAGES', biome: 'comte', cx: 290, cy: 590, blob: 4, scale: 1.45, rot: 0, icon: 'leaf', caption: "Une forêt touffue à l'orée du comté des contes." }
+  { id: 'bibliotheque', name: 'Bibliothèque du savoir', l1: 'BIBLIOTHÈQUE', l2: 'DU SAVOIR', biome: 'reliure', cx: 480, cy: 230, blob: 2, scale: 1.4, rot: 0, caption: 'Un sanctuaire de récits et de pages anciennes.' },
+  { id: 'chutes-theiere', name: 'Chutes de la Théière', l1: 'CHUTES DE LA', l2: 'THÉIÈRE', biome: 'reliure', cx: 340, cy: 410, blob: 0, scale: 1.3, rot: 0, caption: "Une cascade fantaisiste tout droit sortie d'un conte." },
+  { id: 'champs-elysees', name: 'Champs Élysées', l1: 'CHAMPS', l2: 'ÉLYSÉES', biome: 'mythopie', cx: 660, cy: 440, blob: 1, scale: 1.5, rot: 0, caption: 'Des champs dorés inspirés des mythes grecs.' },
+  { id: 'mont-olympe', name: 'Mont Olympe', l1: 'MONT', l2: 'OLYMPE', biome: 'mythopie', cx: 740, cy: 240, blob: 2, scale: 1.55, rot: -4, caption: 'Le sommet légendaire où résident les dieux.' },
+  { id: 'bois-sauvages', name: 'Bois sauvages', l1: 'BOIS', l2: 'SAUVAGES', biome: 'comte', cx: 290, cy: 590, blob: 4, scale: 1.45, rot: 0, caption: "Une forêt touffue à l'orée du comté des contes." }
 ];
 const RANCH_ZONES = [
-  { id: 'ranch-florespérance', name: 'Ranch de Florespérance', l1: 'RANCH DE', l2: 'FLORESPÉRANCE', biome: 'ranch', cx: 460, cy: 480, blob: 1, scale: 1.55, rot: 0, icon: 'castle', caption: 'Le cœur fleuri du ranch, entre granges et vergers.' },
-  { id: 'voie-souhaits', name: 'Voie des souhaits', l1: 'VOIE DES', l2: 'SOUHAITS', biome: 'ranch', cx: 480, cy: 310, blob: 3, scale: 1.3, rot: 0, icon: 'sun', caption: 'Un chemin serpentant vers les hauteurs du ranch.' },
-  { id: 'alpes-enchantees', name: 'Alpes enchantées', l1: 'ALPES', l2: 'ENCHANTÉES', biome: 'alpes', cx: 690, cy: 180, blob: 2, scale: 1.55, rot: 0, icon: 'snow', caption: 'Des sommets enneigés et enchantés qui dominent le ranch.' },
-  { id: 'highlands-ranch', name: 'Highlands du Ranch', l1: 'HIGHLANDS', l2: 'DU RANCH', biome: 'alpes', cx: 760, cy: 350, blob: 0, scale: 1.35, rot: 6, icon: 'snow', caption: 'De hauts plateaux balayés par le vent, au-dessus du ranch.' },
-  { id: 'ravin-ravissant', name: 'Ravin ravissant', l1: 'RAVIN', l2: 'RAVISSANT', biome: 'gulch', cx: 260, cy: 560, blob: 4, scale: 1.4, rot: 0, icon: 'peak', caption: 'Un canyon escarpé aux couleurs flamboyantes.' },
-  { id: 'clairiere-feerique', name: 'Clairière féerique', l1: 'CLAIRIÈRE', l2: 'FÉERIQUE', biome: 'pixie', cx: 320, cy: 270, blob: 0, scale: 1.3, rot: -5, icon: 'flower', caption: 'Une clairière secrète où volent les lucioles et les fées.' }
+  { id: 'ranch-florespérance', name: 'Ranch de Florespérance', l1: 'RANCH DE', l2: 'FLORESPÉRANCE', biome: 'ranch', cx: 460, cy: 480, blob: 1, scale: 1.55, rot: 0, caption: 'Le cœur fleuri du ranch, entre granges et vergers.' },
+  { id: 'voie-souhaits', name: 'Voie des souhaits', l1: 'VOIE DES', l2: 'SOUHAITS', biome: 'ranch', cx: 480, cy: 310, blob: 3, scale: 1.3, rot: 0, caption: 'Un chemin serpentant vers les hauteurs du ranch.' },
+  { id: 'alpes-enchantees', name: 'Alpes enchantées', l1: 'ALPES', l2: 'ENCHANTÉES', biome: 'alpes', cx: 690, cy: 180, blob: 2, scale: 1.55, rot: 0, caption: 'Des sommets enneigés et enchantés qui dominent le ranch.' },
+  { id: 'highlands-ranch', name: 'Highlands du Ranch', l1: 'HIGHLANDS', l2: 'DU RANCH', biome: 'alpes', cx: 760, cy: 350, blob: 0, scale: 1.35, rot: 6, caption: 'De hauts plateaux balayés par le vent, au-dessus du ranch.' },
+  { id: 'ravin-ravissant', name: 'Ravin ravissant', l1: 'RAVIN', l2: 'RAVISSANT', biome: 'gulch', cx: 260, cy: 560, blob: 4, scale: 1.4, rot: 0, caption: 'Un canyon escarpé aux couleurs flamboyantes.' },
+  { id: 'clairiere-feerique', name: 'Clairière féerique', l1: 'CLAIRIÈRE', l2: 'FÉERIQUE', biome: 'pixie', cx: 320, cy: 270, blob: 0, scale: 1.3, rot: -5, caption: 'Une clairière secrète où volent les lucioles et les fées.' }
 ];
 
 const MAPS = [
@@ -112,19 +120,6 @@ function zoneFish(biomeId) {
 function zoneCritters(biomeId) {
   const bio = BIOME[biomeId];
   return SPECIES.filter((s) => s.biome === biomeId).map((s) => ({ name: s.name, href: '#/animaux?q=' + encodeURIComponent(bio?.name || s.name) }));
-}
-
-function ZoneIcon({ name, x, y }) {
-  const size = 24;
-  const props = { x: x - 12, y: y - 12, width: size, height: size };
-  if (name === 'castle') return <g {...props} viewBox="-14 -14 28 28"><rect x="2" y="12" width="20" height="12" rx="1.5" fill="#F8F4FF" /><path d="M2,12 L12,2 L22,12 Z" fill="#F8F4FF" /><rect x="10" y="16" width="4" height="8" fill="#6B5DA8" /><line x1="12" y1="2" x2="12" y2="-2" stroke="#F8F4FF" stroke-width="1.6" /><path d="M12,-2 L17,0 L12,2 Z" fill="#E8604C" /></g>;
-  if (name === 'snow') return <g {...props} viewBox="-14 -14 28 28" stroke="#F8F4FF" stroke-width="2.2" stroke-linecap="round"><line x1="2" y1="12" x2="22" y2="12" /><line x1="12" y1="2" x2="12" y2="22" /><line x1="5" y1="5" x2="19" y2="19" /><line x1="5" y1="19" x2="19" y2="5" /></g>;
-  if (name === 'wave') return <g {...props} viewBox="-14 -14 28 28" fill="none" stroke="#F8F4FF" stroke-width="2.4" stroke-linecap="round"><path d="M1,10 Q6,3 12,10 Q18,17 23,10" /><path d="M1,18 Q6,11 12,18 Q18,25 23,18" opacity="0.7" /></g>;
-  if (name === 'leaf') return <g {...props} viewBox="-14 -14 28 28"><path d="M12,1 C21,4 23,14 12,24 C1,14 3,4 12,1 Z" fill="#F8F4FF" /><line x1="12" y1="3" x2="12" y2="22" stroke="#5FBF7F" stroke-width="1.4" /></g>;
-  if (name === 'peak') return <g {...props} viewBox="-14 -14 28 28"><path d="M0,20 L9,3 L15,10 L19,4 L24,20 Z" fill="#F8F4FF" /><path d="M9,3 L12,9 L7,11 Z" fill="#BFE3FF" /></g>;
-  if (name === 'flower') return <g {...props} viewBox="-14 -14 28 28"><g fill="#F8F4FF"><circle cx="12" cy="5" r="3.4" /><circle cx="18" cy="10" r="3.4" /><circle cx="16" cy="18" r="3.4" /><circle cx="8" cy="18" r="3.4" /><circle cx="6" cy="10" r="3.4" /></g><circle cx="12" cy="12" r="2.6" fill="#F5C95C" /></g>;
-  if (name === 'book') return <g {...props} viewBox="-14 -14 28 28"><path d="M2,4 C6,2 10,2 12,4 C14,2 18,2 22,4 L22,20 C18,18 14,18 12,20 C10,18 6,18 2,20 Z" fill="#F8F4FF" /><line x1="12" y1="4" x2="12" y2="20" stroke="#D9A6E8" stroke-width="1.4" /></g>;
-  return null;
 }
 
 export function Carte() {
@@ -191,7 +186,8 @@ export function Carte() {
                   <g key={zone.id} onClick={() => setZoneId(zone.id)} style={{ cursor: 'pointer' }}>
                     <rect x={x} y={y} width={w} height={h} fill="transparent" />
                     {tile && <image href={`img/map/${tile}`} x={x} y={y} width={w} height={h} preserveAspectRatio="xMidYMid meet" />}
-                    {isSel && <rect x={x - 5} y={y - 5} width={w + 10} height={h + 10} rx="10" fill="none" stroke="#FFE8A3" stroke-width="4" />}
+                    {isSel && zone.outline && <path d={zone.outline} fill="none" stroke="#FFE8A3" stroke-width="7" stroke-linejoin="round" filter="url(#map-glow)" opacity="0.9" />}
+                    {isSel && zone.outline && <path d={zone.outline} fill="none" stroke="#FFE8A3" stroke-width="4" stroke-linejoin="round" />}
                   </g>
                 );
               }
@@ -214,13 +210,12 @@ export function Carte() {
 
             {map.zones.map((zone) => {
               const isSel = zone.id === zoneId;
+              const y1 = zone.l2 ? -6 : 7;
+              const y2 = 17;
               return (
                 <g key={zone.id} transform={`translate(${zone.cx},${zone.cy})`} onClick={() => setZoneId(zone.id)} role="button" tabindex="0" aria-label={zone.name} style={{ cursor: 'pointer' }}>
-                  {isSel && <circle r="23" cy="-34" fill="none" stroke="var(--accent)" stroke-width="2" opacity="0.65" />}
-                  <circle r="17" cy="-34" fill="var(--surface-2)" stroke={isSel ? '#FFE8A3' : 'var(--bg)'} stroke-width={isSel ? 3.5 : 2} />
-                  <ZoneIcon name={zone.icon} x={0} y={-34} />
-                  <text x="0" y="2" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="21" fill="var(--text)" stroke="var(--bg)" stroke-width="4" stroke-linejoin="round" paint-order="stroke" style={{ letterSpacing: '1px' }}>{zone.l1}</text>
-                  {zone.l2 && <text x="0" y="24" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="21" fill="var(--text)" stroke="var(--bg)" stroke-width="4" stroke-linejoin="round" paint-order="stroke" style={{ letterSpacing: '1px' }}>{zone.l2}</text>}
+                  <text x="0" y={y1} text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="21" fill={isSel ? '#FFE8A3' : 'var(--text)'} stroke="var(--bg)" stroke-width="4" stroke-linejoin="round" paint-order="stroke" style={{ letterSpacing: '1px' }}>{zone.l1}</text>
+                  {zone.l2 && <text x="0" y={y2} text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="21" fill={isSel ? '#FFE8A3' : 'var(--text)'} stroke="var(--bg)" stroke-width="4" stroke-linejoin="round" paint-order="stroke" style={{ letterSpacing: '1px' }}>{zone.l2}</text>}
                 </g>
               );
             })}
