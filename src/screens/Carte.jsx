@@ -1,10 +1,10 @@
 import { useState } from 'preact/hooks';
 import { useStore } from '../lib/store.js';
 import { BIOME } from '../data/biomes.js';
-import { CROPS, FISH, GEMS, FORAGE } from '../data/resources.js';
+import { CROPS, FISH, GEMS, FORAGE, GEM_COLORS, RIPPLES } from '../data/resources.js';
 import { SPECIES } from '../data/critters.js';
 import { FLOWERS } from '../data/flowers.js';
-import { Icon, Seg, ExtTag } from '../ui.jsx';
+import { Icon, Thumb, Seg, ExtTag } from '../ui.jsx';
 
 // Décor des zones (formes "dessinées à la main") : purement visuel, aucune donnée de jeu.
 const BLOBS = [
@@ -99,37 +99,102 @@ const MAPS = [
   { id: 'ranch', label: 'Wishblossom Ranch', ext: 'ranch', zones: RANCH_ZONES, viewBox: '0 0 1000 800', river: 'M 680,220 C 600,280 520,340 470,420 C 420,480 340,500 280,540' }
 ];
 
-const TYPE_LABEL = { culture: 'Culture', cueillette: 'Cueillette', gemme: 'Gemme' };
+// Libellés de cueillette (fruits/épices/champis ; les fleurs ont leur propre section plus bas).
+const CAT_LABEL = { fruit: 'Fruit', epice: 'Épice', champi: 'Champignon' };
 
 // Ressources/pêche/animaux réels du biome associé à une zone — jamais dupliqués, juste
 // filtrés depuis resources.js/critters.js (même source que Resources.jsx/Animals.jsx).
 // Chaque lien pré-remplit la recherche de l'écran visé (ResourceScreen lit déjà ?q=).
+// Champs enrichis (file/tag/prix) pour l'affichage en cartes façon Cueillette, au lieu
+// de simples lignes de texte.
 function zoneResources(biomeId) {
   const out = [];
-  for (const c of CROPS) if (c.biomes.includes(biomeId)) out.push({ name: c.name, type: 'culture', href: '#/potager?q=' + encodeURIComponent(c.name) });
-  for (const f of FORAGE) if (f.biomes.includes(biomeId)) out.push({ name: f.name, type: 'cueillette', href: '#/cueillette?q=' + encodeURIComponent(f.name) });
-  for (const g of GEMS) if (g.biomes.includes(biomeId)) out.push({ name: g.name, type: 'gemme', href: '#/mines?q=' + encodeURIComponent(g.name) });
+  for (const c of CROPS) if (c.biomes.includes(biomeId)) {
+    out.push({ name: c.name, file: c.file, href: '#/potager?q=' + encodeURIComponent(c.name), tag: 'Culture', price: c.profit, priceLabel: 'pièces/h' });
+  }
+  for (const f of FORAGE) if (f.biomes.includes(biomeId)) {
+    out.push({
+      name: f.name, file: f.file, href: '#/cueillette?q=' + encodeURIComponent(f.name),
+      tag: CAT_LABEL[f.cat] || 'Cueillette', tagOutline: true, price: f.price > 0 ? f.price : null, priceLabel: 'pièces'
+    });
+  }
+  for (const g of GEMS) if (g.biomes.includes(biomeId)) {
+    const gc = GEM_COLORS[g.color];
+    out.push({ name: g.name, file: g.file, href: '#/mines?q=' + encodeURIComponent(g.name), tag: gc?.label, tagColor: gc?.color, ring: gc?.color, price: g.price, priceLabel: 'pièces' });
+  }
   return out;
 }
-// Fleurs décoratives (flowers.js, même source que la Cueillette), des plus abondantes aux plus rares.
+// Fleurs décoratives (flowers.js, même source que la Cueillette), des plus abondantes aux plus
+// rares. Mêmes champs enrichis (file/tag/prix) que les autres sections pour la carte façon Cueillette.
 const RARITY_ORDER = ['abundant', 'average', 'rare', 'ultra'];
 const RARITY_LABEL = { abundant: 'Abondante', average: 'Courante', rare: 'Rare', ultra: 'Très rare' };
 function zoneFlowers(biomeId) {
   return FLOWERS.filter((f) => f.biome === biomeId)
     .sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity) || a.name.localeCompare(b.name, 'fr'))
-    .map((f) => ({ name: f.name, label: `${RARITY_LABEL[f.rarity]} · ${f.timer} min`, href: '#/cueillette?q=' + encodeURIComponent(f.name) }));
+    .map((f) => ({
+      name: f.name, file: f.file, href: '#/cueillette?q=' + encodeURIComponent(f.name),
+      tag: `${RARITY_LABEL[f.rarity]} · ${f.timer} min`, tagOutline: true, price: f.price, priceLabel: 'pièces'
+    }));
 }
 
 function zoneFish(biomeId) {
-  return FISH.filter((f) => f.biomes.includes(biomeId)).map((f) => ({ name: f.name, href: '#/peche?q=' + encodeURIComponent(f.name) }));
+  return FISH.filter((f) => f.biomes.includes(biomeId)).map((f) => {
+    const r = RIPPLES[f.ripple];
+    return {
+      name: f.name, file: f.file, href: '#/peche?q=' + encodeURIComponent(f.name), round: true,
+      ring: r?.color, tag: r?.label, tagColor: r?.color, tag2: f.cond || null, tag2Color: '#7DB4F5', note: f.use || null
+    };
+  });
 }
 // Animals.jsx recherche sur le nom de la VARIANTE (ex. "Singe doré"), pas sur le nom de
 // l'espèce au pluriel ("Singes") : ça ne matcherait aucune ligne. Le nom du biome, lui, est
 // inclus dans la recherche de chaque variante (BIOME[...].name) et désigne sans ambiguïté
-// tous les animaux de cette zone.
+// tous les animaux de cette zone. Vignette = 1ère couleur de l'espèce, juste à titre représentatif.
 function zoneCritters(biomeId) {
   const bio = BIOME[biomeId];
-  return SPECIES.filter((s) => s.biome === biomeId).map((s) => ({ name: s.name, href: '#/animaux?q=' + encodeURIComponent(bio?.name || s.name) }));
+  return SPECIES.filter((s) => s.biome === biomeId).map((s) => ({
+    name: s.name, file: s.variants[0]?.[2] ? s.variants[0][2] + '.png' : null,
+    href: '#/animaux?q=' + encodeURIComponent(bio?.name || s.name)
+  }));
+}
+
+// Carte d'élément façon Cueillette (vignette + nom + étiquette(s) + prix), réutilisée pour
+// les ressources, la pêche et les animaux d'une zone.
+function ZoneItemCard({ it }) {
+  return (
+    <a href={it.href} class="item">
+      <Thumb file={it.file} name={it.name} round={it.round} ring={it.ring} />
+      <div class="body">
+        <div class="row wrap" style={{ gap: '6px' }}>
+          <span class="name">{it.name}</span>
+          {it.tag && <span class={'tag' + (it.tagOutline ? ' outline' : '')} style={it.tagColor ? { background: it.tagColor } : null}>{it.tag}</span>}
+          {it.tag2 && <span class="tag" style={{ background: it.tag2Color }}>{it.tag2}</span>}
+        </div>
+        {it.note && <span class="small" style={{ color: 'var(--accent)', fontWeight: 700 }}>{it.note}</span>}
+      </div>
+      {it.price != null && (
+        <div class="side">
+          <span class="big-num">{it.price}</span>
+          <span class="small muted" style={{ fontWeight: 700 }}>{it.priceLabel}</span>
+        </div>
+      )}
+    </a>
+  );
+}
+
+function ZoneSection({ title, items, empty }) {
+  return (
+    <>
+      <div class="small muted" style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', margin: '14px 0 6px' }}>
+        {title}{items.length ? ` (${items.length})` : ''}
+      </div>
+      {items.length ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '8px' }}>
+          {items.map((it) => <ZoneItemCard key={it.href} it={it} />)}
+        </div>
+      ) : <div class="small muted">{empty}</div>}
+    </>
+  );
 }
 
 export function Carte() {
@@ -157,8 +222,9 @@ export function Carte() {
         <Seg label="Carte affichée" options={availableMaps.map((m) => [m.id, m.label])} value={map.id} onChange={pickMap} />
       )}
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
-        <div style={{ flex: '999 1 620px', minWidth: 0, background: 'var(--surface)', borderRadius: '24px', padding: '16px' }}>
+      {/* Carte en pleine largeur (plus de colonne latérale) : le tableau de ressources */}
+      {/* prend ensuite toute la largeur en dessous, pour limiter le défilement interne. */}
+      <div style={{ background: 'var(--surface)', borderRadius: '24px', padding: '16px' }}>
           <svg viewBox={map.viewBox} style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '18px' }} role="img" aria-label={'Carte — ' + map.label}>
             <defs>
               <filter id="map-sketchy" x="-20%" y="-20%" width="140%" height="140%">
@@ -236,69 +302,35 @@ export function Carte() {
               );
             })}
           </svg>
-        </div>
-
-        <div class="card" style={{ flex: '1 1 320px', minWidth: '300px', maxWidth: '420px', padding: 0, overflow: 'hidden', alignSelf: 'stretch' }}>
-          {selected ? (
-            <>
-              <div style={{ padding: '18px 20px', background: bio?.color, position: 'relative' }}>
-                <button type="button" onClick={() => setZoneId(null)} aria-label="Fermer le panneau"
-                  style={{ position: 'absolute', top: '12px', right: '12px', width: '28px', height: '28px', borderRadius: '999px', border: 'none', background: 'rgba(20,18,58,0.22)', color: '#14123A', fontSize: '15px', fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>×</button>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '20px', color: '#14123A', paddingRight: '30px' }}>{selected.name}</div>
-                <ExtTag ext={map.ext} />
-              </div>
-              <div style={{ padding: '4px 18px 20px', maxHeight: '560px', overflowY: 'auto' }}>
-                <div class="small muted" style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', margin: '14px 0 6px' }}>Ressources</div>
-                {resources.length ? (
-                  <div class="list-rows">
-                    {resources.map((r) => (
-                      <a key={r.href} href={r.href} class="list-row">
-                        <span style={{ flex: 1, fontWeight: 700 }}>{r.name}</span>
-                        <span class="tag">{TYPE_LABEL[r.type]}</span>
-                      </a>
-                    ))}
-                  </div>
-                ) : <div class="small muted">Pas encore de ressource recensée ici.</div>}
-
-                <div class="small muted" style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', margin: '14px 0 6px' }}>Fleurs</div>
-                {flowers.length ? (
-                  <div class="list-rows">
-                    {flowers.map((f) => (
-                      <a key={f.href} href={f.href} class="list-row">
-                        <span style={{ flex: 1, fontWeight: 700 }}>{f.name}</span>
-                        <span class="tag outline">{f.label}</span>
-                      </a>
-                    ))}
-                  </div>
-                ) : <div class="small muted">Pas encore de fleur recensée ici.</div>}
-
-                <div class="small muted" style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', margin: '14px 0 6px' }}>Pêche</div>
-                {fish.length ? (
-                  <div class="list-rows">
-                    {fish.map((f) => <a key={f.href} href={f.href} class="list-row"><span style={{ flex: 1, fontWeight: 700 }}>{f.name}</span></a>)}
-                  </div>
-                ) : <div class="small muted">Aucun poisson recensé dans cette zone.</div>}
-
-                <div class="small muted" style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', margin: '14px 0 6px' }}>Animaux</div>
-                {critters.length ? (
-                  <div class="list-rows">
-                    {critters.map((c) => <a key={c.href} href={c.href} class="list-row"><span style={{ flex: 1, fontWeight: 700 }}>{c.name}</span></a>)}
-                  </div>
-                ) : <div class="small muted">Pas encore d'animal recensé ici.</div>}
-
-                <div class="small muted" style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', margin: '14px 0 6px' }}>Autres infos</div>
-                <div class="small" style={{ lineHeight: 1.5, padding: '2px 4px 4px' }}>{selected.caption}</div>
-              </div>
-            </>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '50px 24px', minHeight: '400px' }}>
-              <Icon name="search" size={28} style={{ color: 'var(--accent)', marginBottom: '14px' }} />
-              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px' }}>Choisis une zone</div>
-              <div class="small muted" style={{ marginTop: '8px', maxWidth: '240px', lineHeight: 1.5 }}>Clique sur une zone de la carte pour afficher ses ressources, ses fleurs, sa pêche, ses animaux et plus.</div>
-            </div>
-          )}
-        </div>
       </div>
+
+      {/* Tableau sous la carte, pleine largeur : cartes façon Cueillette (vignette, */}
+      {/* étiquette, prix) groupées par Ressources/Pêche/Animaux, au lieu du panneau latéral. */}
+      {selected ? (
+        <div class="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '20px 24px', background: bio?.color, position: 'relative' }}>
+            <button type="button" onClick={() => setZoneId(null)} aria-label="Fermer le panneau"
+              style={{ position: 'absolute', top: '16px', right: '16px', width: '28px', height: '28px', borderRadius: '999px', border: 'none', background: 'rgba(20,18,58,0.22)', color: '#14123A', fontSize: '15px', fontWeight: 700, cursor: 'pointer', lineHeight: 1 }}>×</button>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '22px', color: '#14123A', paddingRight: '32px' }}>{selected.name}</div>
+            <ExtTag ext={map.ext} />
+          </div>
+          <div style={{ padding: '4px 24px 24px' }}>
+            <ZoneSection title="Ressources" items={resources} empty="Pas encore de ressource recensée ici." />
+            <ZoneSection title="Fleurs" items={flowers} empty="Pas encore de fleur recensée ici." />
+            <ZoneSection title="Pêche" items={fish} empty="Aucun poisson recensé dans cette zone." />
+            <ZoneSection title="Animaux" items={critters} empty="Pas encore d'animal recensé ici." />
+
+            <div class="small muted" style={{ fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', margin: '14px 0 6px' }}>Autres infos</div>
+            <div class="small" style={{ lineHeight: 1.5, padding: '2px 4px 4px' }}>{selected.caption}</div>
+          </div>
+        </div>
+      ) : (
+        <div class="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '50px 24px' }}>
+          <Icon name="search" size={28} style={{ color: 'var(--accent)', marginBottom: '14px' }} />
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '16px' }}>Choisis une zone</div>
+          <div class="small muted" style={{ marginTop: '8px', maxWidth: '320px', lineHeight: 1.5 }}>Clique sur une zone de la carte pour afficher ses ressources, ses fleurs, sa pêche, ses animaux et plus.</div>
+        </div>
+      )}
     </div>
   );
 }
