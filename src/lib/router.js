@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 
 // Navigation par « # » : fonctionne sur GitHub Pages sans configuration serveur.
 function parse() {
@@ -8,10 +8,27 @@ function parse() {
   return { path: '/' + parts.join('/'), parts, query: new URLSearchParams(query) };
 }
 
+// Mémorise la position de défilement de chaque page visitée (en mémoire, pour la session) :
+// un retour en arrière (lien « Retour », bouton précédent du navigateur) retrouve l'endroit
+// exact où on en était, au lieu de remonter en haut à chaque fois.
+const scrollMemory = new Map();
+
 export function useRoute() {
   const [route, setRoute] = useState(parse());
+  const pathRef = useRef(route.path);
+
+  // Restaure la position connue de la nouvelle page une fois son contenu monté (sinon
+  // scrollTo s'applique encore à l'ancienne page, pas assez haute pour y arriver).
   useEffect(() => {
-    const fn = () => { setRoute(parse()); window.scrollTo(0, 0); };
+    window.scrollTo(0, scrollMemory.get(route.path) || 0);
+    pathRef.current = route.path;
+  }, [route.path]);
+
+  useEffect(() => {
+    const fn = () => {
+      scrollMemory.set(pathRef.current, window.scrollY);
+      setRoute(parse());
+    };
     window.addEventListener('hashchange', fn);
     return () => window.removeEventListener('hashchange', fn);
   }, []);
