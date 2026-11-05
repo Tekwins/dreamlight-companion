@@ -12,6 +12,8 @@
 //   npm run data -- fleurs-images -> images de fleurs via le wiki EN (nom_vo), sans tout retélécharger
 //   npm run data -- locdb      -> extrait la localisation FR+EN du jeu installé (sur la machine de
 //                                 Tek), pour vérifier/traduire les noms et fiabiliser le matching d'images
+//   npm run data -- recompenses-images -> images des récompenses (vêtements/motifs/meubles) via
+//                                 mydreamlightvalley.com
 //
 // Les pages brutes servent ensuite à générer les fichiers de src/data
 // (recettes complètes, habitants, quêtes, succès, Voies des étoiles).
@@ -554,6 +556,93 @@ async function fetchImagesFromMdv() {
   }
 }
 
+// Comme fileName() dans build-data.mjs : les récompenses (villagers.js, starpath.js) n'ont pas de
+// champ "file" dédié, juste un "name" qui peut contenir des caractères interdits sous Windows.
+function fileName(s) {
+  return s.replace(/["<>:|?*]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+// Images des récompenses d'amitié et de la Voie des étoiles : mydreamlightvalley.com a ses propres
+// pages Vêtements (/fr/clothing/, ~1860) et Motifs (/fr/motif/, ~572), jusqu'ici jamais exploitées
+// (seules furniture/meal/character l'étaient). Même mécanisme que fetchFurnitureFromMdv : nom exact
+// d'abord, puis mots triés en repli. Les meubles de récompense (noms différents de furniture.js,
+// même catégorie MDV) sont retentés avec le cache déjà construit.
+async function fetchRewardImagesFromMdv() {
+  const villagersMod = await import('../src/data/villagers.js');
+  const starpathMod = await import('../src/data/starpath.js');
+
+  const targets = new Map(); // nom -> { file, type }
+  for (const v of villagersMod.VILLAGERS) {
+    for (const r of v.rewards) {
+      if (r.type === 'Monnaies' || targets.has(r.name)) continue;
+      targets.set(r.name, { file: fileName(r.name) + '.png', type: r.type });
+    }
+  }
+  for (const sp of starpathMod.STAR_PATHS) {
+    for (const t of sp.tiers) {
+      for (const r of t.rewards) {
+        const name = r.file.replace(/\.png$/, '');
+        if (targets.has(name)) continue;
+        targets.set(name, { file: r.file, type: null }); // type inconnu : on essaie vêtements puis motifs
+      }
+    }
+  }
+
+  const missing = [...targets].filter(([, t]) => !existsSync(path.join('public/img', t.file.replace(/ /g, '_'))));
+  if (!missing.length) { console.log('Toutes les récompenses ont déjà leur image.'); return; }
+  console.log(missing.length, 'récompenses sans image, on essaie mydreamlightvalley.com (vêtements/motifs/meubles)');
+
+  const clothingMap = await mdvNameMap('clothing', 'clothings', /^Garde-Robe\s+/);
+  const motifMap = await mdvNameMap('motif', 'motifs', /^Motif\s+/);
+  const furnitureMap = await mdvNameMap('furniture', 'furnitures', /^Meubles\s+/);
+  const byTokens = (map) => {
+    const t = {};
+    for (const [n, url] of Object.entries(map)) { const k = tokenKey(n); if (!(k in t)) t[k] = url; }
+    return t;
+  };
+  const clothingTokens = byTokens(clothingMap);
+  const furnitureTokens = byTokens(furnitureMap);
+  // Les récompenses "Autocollant X" (wiki FR) et les pages "Motif de X"/"Portrait de X" (MDV)
+  // utilisent des formulations très différentes pour le même objet (traductions indépendantes,
+  // pas juste un ordre de mots) : comparer seulement le "coeur" du nom, après avoir retiré le
+  // préfixe propre à chaque source, est nettement plus fiable que le nom complet.
+  const motifCore = {};
+  for (const [n, url] of Object.entries(motifMap)) {
+    const core = n.replace(/^(motif( de| du| des)?|portrait de)\s+/, '').trim();
+    const k = tokenKey(core);
+    if (!(k in motifCore)) motifCore[k] = url;
+  }
+  const stripRewardPrefix = (s) => s.replace(/^(autocollant|motif)\s+/i, '').trim();
+
+  const CLOTHING_TYPES = new Set(['Vêtements', 'Styles de rêves', 'Coiffure', '', null]);
+  const MOTIF_TYPES = new Set(['Autocollants', 'Motifs']);
+  const FURNITURE_TYPES = new Set(['Meubles', 'Meuble']);
+
+  for (const [name, t] of missing) {
+    const n = normName(name), k = tokenKey(name);
+    let url = null, src = null;
+    if (FURNITURE_TYPES.has(t.type)) { url = furnitureMap[n] || furnitureTokens[k]; src = 'meubles'; }
+    if (!url && CLOTHING_TYPES.has(t.type)) { url = clothingMap[n] || clothingTokens[k]; src = 'vêtements'; }
+    if (!url && (MOTIF_TYPES.has(t.type) || t.type === null)) {
+      url = motifCore[tokenKey(stripRewardPrefix(name))]; src = 'motifs';
+    }
+    // Type inconnu (Voie des étoiles) : si rien trouvé côté motifs, essaie aussi vêtements/meubles.
+    if (!url && t.type === null) {
+      url = clothingMap[n] || clothingTokens[k]; src = 'vêtements';
+      if (!url) { url = furnitureMap[n] || furnitureTokens[k]; src = 'meubles'; }
+    }
+    if (!url) continue;
+    try {
+      const result = await saveImage(url, t.file);
+      if (result === 'ok') console.log(`  ok (mdv ${src})`, t.file);
+      else console.warn(`  ?? (mdv ${src})`, t.file, '-', result);
+    } catch (e) {
+      console.warn('  !! (mdv)', t.file, '-', e.message);
+    }
+    await sleep(150);
+  }
+}
+
 // Fleurs décoratives : mydreamlightvalley.com n'a pas de catégorie fleurs (vérifié sur son
 // sitemap), mais le wiki EN héberge l'image de chaque fleur sous son nom anglais (nom_vo=, lu
 // dans les fiches brutes déjà en cache sous data/raw/frfandom/<nom FR>.json) — pas bloqué par
@@ -616,4 +705,9 @@ else if (mode === 'fleurs-images') {
 }
 // Extrait la localisation FR+EN du jeu installé (texte officiel par objet) : npm run data -- locdb
 else if (mode === 'locdb') await fetchLocdb();
+// Images des récompenses (vêtements/motifs/meubles) via mydreamlightvalley.com : npm run data -- recompenses-images
+else if (mode === 'recompenses-images') {
+  await mkdir('public/img', { recursive: true });
+  await fetchRewardImagesFromMdv();
+}
 else await fetchPages();
