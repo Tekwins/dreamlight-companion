@@ -30,25 +30,27 @@ const TILE = {
 };
 
 // Zones affichées sur la carte. Le jeu de base reprend tel quel les 8 biomes réels
-// (biomes.js), en forme réelle (`poly`) : gabarit au jugé d'après la carte officielle
-// (static.wikia.nocookie.net/.../Carte_DDV.png) plutôt que depuis une métadonnée du jeu —
-// aucune position/offset exploitable n'est stockée avec les tuiles extraites (chaque sprite
-// bg_map_part_* a sa propre texture indépendante, sans rect partagé), donc pas de montage
-// pixel-exact possible, mais les polygones s'emboîtent bord à bord comme le vrai plan.
+// (biomes.js), affiché avec l'image COMPLÈTE de chaque tuile extraite (pas de recadrage) —
+// chacune garde son propre décor (rochers, rivière, pont…) tel qu'il sort du jeu. Position de
+// chaque image (`box`) calée au jugé d'après la carte officielle (static.wikia.nocookie.net/
+// .../Carte_DDV.png) et les éléments visuels de raccord (pont, rivière) qui sortent des bords
+// de chaque tuile : aucune métadonnée de position exploitable n'est stockée avec les sprites
+// (chacun a sa propre texture indépendante, sans rect partagé dans un atlas commun), donc pas
+// de montage pixel-exact possible, juste un assemblage le plus fidèle possible à l'œil.
 // Les extensions ont des lieux bien plus précis que nos biomes actuels (ex. « L'Oasis » dans
 // Dunes scintillantes) : pas encore une donnée de jeu confirmée dans src/data, donc gardées
 // ici en formes décoratives (`blob`) — chaque zone est juste rattachée au biome réel le plus
 // proche pour les ressources/pêche/animaux, disposition plausible mais pas géographiquement
 // garantie (aucune carte officielle assemblée n'existe pour les extensions, voir mémoire).
 const BASE_ZONES = [
-  { id: 'esplanade', name: 'Esplanade', l1: 'ESPLANADE', l2: '', biome: 'esplanade', poly: [[400, 150], [580, 150], [580, 600], [400, 600]], cx: 490, cy: 330, icon: 'castle', caption: 'Le cœur de la vallée, là où bat la vie du village.' },
-  { id: 'prairie', name: 'Prairie tranquille', l1: 'PRAIRIE', l2: 'TRANQUILLE', biome: 'prairie', poly: [[400, 600], [580, 600], [580, 760], [400, 760]], cx: 490, cy: 680, icon: 'sun', caption: 'De vastes champs à perte de vue, parfaits pour les récoltes.' },
-  { id: 'plage', name: 'Plage enchantée', l1: 'PLAGE', l2: 'ENCHANTÉE', biome: 'plage', poly: [[580, 590], [740, 590], [740, 760], [580, 760]], cx: 660, cy: 675, icon: 'wave', caption: 'Sable doré et vagues douces, avec quelques îlots au large.' },
-  { id: 'foret', name: 'Forêt du courage', l1: 'FORÊT DU', l2: 'COURAGE', biome: 'foret', poly: [[580, 260], [740, 260], [740, 590], [580, 590]], cx: 660, cy: 425, icon: 'leaf', caption: 'Une canopée dense où rôdent ratons laveurs et brochets.' },
-  { id: 'bayou', name: 'Bayou de la confiance', l1: 'BAYOU DE LA', l2: 'CONFIANCE', biome: 'bayou', poly: [[90, 575], [400, 575], [400, 760], [90, 760]], cx: 245, cy: 667, icon: 'leaf', caption: 'Eaux calmes et reflets verts, royaume des crocodiles.' },
-  { id: 'plateau', name: 'Plateau ensoleillé', l1: 'PLATEAU', l2: 'ENSOLEILLÉ', biome: 'plateau', poly: [[90, 420], [400, 420], [400, 575], [90, 575]], cx: 245, cy: 497, icon: 'sun', caption: "Un plateau baigné de soleil, idéal pour les cultures d'été." },
-  { id: 'hauteurs', name: 'Hauteurs glacées', l1: 'HAUTEURS', l2: 'GLACÉES', biome: 'hauteurs', poly: [[740, 180], [900, 180], [900, 400], [740, 400]], cx: 820, cy: 290, icon: 'snow', caption: 'Neiges éternelles et vents glacés sur les hauteurs.' },
-  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', poly: [[90, 205], [400, 205], [400, 420], [90, 420]], cx: 245, cy: 312, icon: 'peak', caption: 'Un territoire oublié, à la lisière du mystère.' }
+  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', box: { x: 0, y: 0, w: 261, h: 330 }, cx: 130, cy: 290, icon: 'peak', caption: 'Un territoire oublié, à la lisière du mystère.' },
+  { id: 'plateau', name: 'Plateau ensoleillé', l1: 'PLATEAU', l2: 'ENSOLEILLÉ', biome: 'plateau', box: { x: 20, y: 330, w: 330, h: 264 }, cx: 185, cy: 460, icon: 'sun', caption: "Un plateau baigné de soleil, idéal pour les cultures d'été." },
+  { id: 'bayou', name: 'Bayou de la confiance', l1: 'BAYOU DE LA', l2: 'CONFIANCE', biome: 'bayou', box: { x: 60, y: 594, w: 288, h: 330 }, cx: 204, cy: 760, icon: 'leaf', caption: 'Eaux calmes et reflets verts, royaume des crocodiles.' },
+  { id: 'esplanade', name: 'Esplanade', l1: 'ESPLANADE', l2: '', biome: 'esplanade', box: { x: 270, y: 20, w: 321, h: 330 }, cx: 430, cy: 268, icon: 'castle', caption: 'Le cœur de la vallée, là où bat la vie du village.' },
+  { id: 'prairie', name: 'Prairie tranquille', l1: 'PRAIRIE', l2: 'TRANQUILLE', biome: 'prairie', box: { x: 266, y: 350, w: 330, h: 161 }, cx: 431, cy: 430, icon: 'sun', caption: 'De vastes champs à perte de vue, parfaits pour les récoltes.' },
+  { id: 'hauteurs', name: 'Hauteurs glacées', l1: 'HAUTEURS', l2: 'GLACÉES', biome: 'hauteurs', box: { x: 590, y: 10, w: 330, h: 299 }, cx: 755, cy: 160, icon: 'snow', caption: 'Neiges éternelles et vents glacés sur les hauteurs.' },
+  { id: 'foret', name: 'Forêt du courage', l1: 'FORÊT DU', l2: 'COURAGE', biome: 'foret', box: { x: 615, y: 255, w: 267, h: 330 }, cx: 748, cy: 420, icon: 'leaf', caption: 'Une canopée dense où rôdent ratons laveurs et brochets.' },
+  { id: 'plage', name: 'Plage enchantée', l1: 'PLAGE', l2: 'ENCHANTÉE', biome: 'plage', box: { x: 850, y: 335, w: 330, h: 253 }, cx: 1015, cy: 461, icon: 'wave', caption: 'Sable doré et vagues douces, avec quelques îlots au large.' }
 ];
 const RIFT_ZONES = [
   { id: 'la-cour', name: 'La Cour', l1: 'LA COUR', l2: '', biome: 'port', cx: 660, cy: 165, blob: 3, scale: 1.3, rot: 0, icon: 'castle', caption: "Une cour de pierre ancienne, porte d'entrée du port." },
@@ -81,7 +83,7 @@ const RANCH_ZONES = [
 ];
 
 const MAPS = [
-  { id: 'base', label: 'Jeu de base', ext: null, zones: BASE_ZONES, viewBox: '0 0 990 850', river: null },
+  { id: 'base', label: 'Jeu de base', ext: null, zones: BASE_ZONES, viewBox: '0 0 1260 960', river: null },
   { id: 'rift', label: 'A Rift in Time', ext: 'rift', zones: RIFT_ZONES, viewBox: '0 0 1000 800', river: 'M 380,250 C 420,320 380,380 420,450 C 460,520 520,560 560,600 C 600,650 630,660 650,700' },
   { id: 'vale', label: 'The Storybook Vale', ext: 'vale', zones: VALE_ZONES, viewBox: '0 0 1000 800', river: 'M 330,350 C 300,420 260,480 270,560 C 275,620 300,660 320,700' },
   { id: 'ranch', label: 'Wishblossom Ranch', ext: 'ranch', zones: RANCH_ZONES, viewBox: '0 0 1000 800', river: 'M 680,220 C 600,280 520,340 470,420 C 420,480 340,500 280,540' }
@@ -179,25 +181,16 @@ export function Carte() {
               const tile = TILE[zone.id];
               const fillColor = BIOME[zone.biome]?.color || '#999';
 
-              // Jeu de base : vraie forme (rectangle réel du biome), emboîtée pile avec ses
-              // voisines, sans contour « dessiné main » — juste un liseré net entre les zones.
-              if (zone.poly) {
-                const pts = zone.poly.map((p) => p.join(',')).join(' ');
-                const xs = zone.poly.map((p) => p[0]), ys = zone.poly.map((p) => p[1]);
-                const bx = Math.min(...xs), by = Math.min(...ys);
-                const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by;
+              // Jeu de base : l'image COMPLÈTE de la tuile (pas de recadrage), à sa taille
+              // réelle (proportions natives) — juste positionnée pour s'approcher au mieux
+              // de la vraie carte, sans contour « dessiné main ».
+              if (zone.box) {
+                const { x, y, w, h } = zone.box;
                 return (
                   <g key={zone.id} onClick={() => setZoneId(zone.id)} style={{ cursor: 'pointer' }}>
-                    <polygon points={pts} fill={fillColor} />
-                    {tile && (
-                      <g clip-path={`url(#clip-${zone.id})`}>
-                        <clipPath id={`clip-${zone.id}`}><polygon points={pts} /></clipPath>
-                        <image href={`img/map/${tile}`} x={bx} y={by} width={bw} height={bh} preserveAspectRatio="xMidYMid slice" />
-                        <polygon points={pts} fill={fillColor} opacity="0.2" />
-                      </g>
-                    )}
-                    {isSel && <polygon points={pts} fill="none" stroke="var(--accent)" stroke-width="3" opacity="0.6" />}
-                    <polygon points={pts} fill="none" stroke={isSel ? '#FFE8A3' : 'var(--bg)'} stroke-width={isSel ? 4 : 2} />
+                    <rect x={x} y={y} width={w} height={h} fill="transparent" />
+                    {tile && <image href={`img/map/${tile}`} x={x} y={y} width={w} height={h} preserveAspectRatio="xMidYMid meet" />}
+                    {isSel && <rect x={x - 5} y={y - 5} width={w + 10} height={h + 10} rx="10" fill="none" stroke="#FFE8A3" stroke-width="4" />}
                   </g>
                 );
               }
