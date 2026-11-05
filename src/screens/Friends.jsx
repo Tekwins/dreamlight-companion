@@ -227,9 +227,9 @@ function FriendDetail({ v, embedded }) {
               return (
                 <div key={r.level + r.name} class="list-row">
                   <span class="tag" style={{ flex: 'none', background: unlocked ? 'var(--teal)' : 'var(--line)', color: unlocked ? '#14123A' : 'var(--muted)' }}>Niv. {r.level}</span>
-                  {r.type !== 'Monnaies' && (
-                    <div style={{ opacity: unlocked ? 1 : 0.6 }}><Thumb file={rewardFile(r.name)} name={r.name} /></div>
-                  )}
+                  <div style={{ opacity: unlocked ? 1 : 0.6 }}>
+                    <Thumb file={r.type === 'Monnaies' ? 'Pièce étoile.png' : rewardFile(r.name)} name={r.name} />
+                  </div>
                   <div class="stack" style={{ gap: '2px', flex: 1 }}>
                     <span style={{ fontWeight: 800, opacity: unlocked ? 1 : 0.6 }}>{r.name}</span>
                     <span class="small muted">{[r.type, r.todo && 'nom à vérifier en jeu'].filter(Boolean).join(' · ')}</span>
