@@ -38,11 +38,15 @@ Interface et textes **en français**. Répondre à Tek en français.
   de Tek — étapes dans `supabase/functions/daily-reminders/README.md`.
 - **Images manquantes**, toutes avec repli sur l'initiale (composant `Thumb`), pas bloquant :
   - Habitants, souvenirs, recettes et fleurs décoratives : 100 % récupérées.
-  - Meubles (`furniture.js`) : 993/1304 (76 %, contre 28 % avant le 2026-11-05) — récupérées directement depuis
+  - Meubles (`furniture.js`) : 996/1304 (76 %, contre 28 % avant le 2026-11-05) — récupérées directement depuis
     les fichiers du jeu installé (voir mémoire `project-data-pipeline-state`, section UnityPy/LocDB, pour la
-    méthode complète si à refaire). Les 311 restants n'ont pas de nom interne reconnu (texte introuvable dans
-    les .locbin) ou pointent vers un sprite au nom ambigu (ex. « Color01 », partagé par des dizaines d'objets
-    différents) — volontairement laissés sans image plutôt que de risquer une image fausse.
+    méthode complète si à refaire — inclut désormais aussi `LocDB_en-US.zip`, la localisation anglaise du jeu,
+    utilisée en complément du français pour fiabiliser la recherche de sprite et vérifier les correspondances
+    existantes : passe de vérification faite le 2026-11-05 sur les 628 meubles + 40 fleurs récupérés cette
+    semaine, aucune erreur confirmée). Les ~308 restants n'ont pas de nom interne reconnu (texte introuvable
+    dans les .locbin) ou ne pointent que vers un sprite au nom générique/ambigu partagé par plusieurs objets
+    différents (ex. « Color01 », « Rug », « MarketStall », « FurnitureBundle ») — volontairement laissés sans
+    image plutôt que de risquer une image fausse.
   - 54 images Voie des étoiles/cosmétiques : définitivement bloquées (CDN Fandom protégé par Cloudflare, pas de
     nom anglais connu) — même méthode d'extraction locale potentiellement applicable si redemandé (pas tentée).
 - Historique des Voies des étoiles passées (27 voies, noms EN uniquement, pas de catégorie wiki FR) : Tek a décliné
