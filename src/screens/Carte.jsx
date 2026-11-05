@@ -30,21 +30,25 @@ const TILE = {
 };
 
 // Zones affichées sur la carte. Le jeu de base reprend tel quel les 8 biomes réels
-// (biomes.js). Les extensions ont des lieux bien plus précis que nos biomes actuels
-// (ex. « L'Oasis » dans Dunes scintillantes) : pas encore une donnée de jeu confirmée dans
-// src/data, donc gardées ici — chaque zone est juste rattachée au biome réel le plus proche
-// pour aller chercher ses ressources/pêche/animaux (la position/forme est une composition
-// plausible, pas un relevé exact : aucune carte officielle assemblée n'existe pour les
-// extensions, voir la mémoire du projet).
+// (biomes.js), en forme réelle (`poly`) : gabarit au jugé d'après la carte officielle
+// (static.wikia.nocookie.net/.../Carte_DDV.png) plutôt que depuis une métadonnée du jeu —
+// aucune position/offset exploitable n'est stockée avec les tuiles extraites (chaque sprite
+// bg_map_part_* a sa propre texture indépendante, sans rect partagé), donc pas de montage
+// pixel-exact possible, mais les polygones s'emboîtent bord à bord comme le vrai plan.
+// Les extensions ont des lieux bien plus précis que nos biomes actuels (ex. « L'Oasis » dans
+// Dunes scintillantes) : pas encore une donnée de jeu confirmée dans src/data, donc gardées
+// ici en formes décoratives (`blob`) — chaque zone est juste rattachée au biome réel le plus
+// proche pour les ressources/pêche/animaux, disposition plausible mais pas géographiquement
+// garantie (aucune carte officielle assemblée n'existe pour les extensions, voir mémoire).
 const BASE_ZONES = [
-  { id: 'esplanade', name: 'Esplanade', l1: 'ESPLANADE', l2: '', biome: 'esplanade', cx: 485, cy: 390, blob: 3, scale: 1.4, rot: 0, icon: 'castle', caption: 'Le cœur de la vallée, là où bat la vie du village.' },
-  { id: 'prairie', name: 'Prairie tranquille', l1: 'PRAIRIE', l2: 'TRANQUILLE', biome: 'prairie', cx: 480, cy: 615, blob: 1, scale: 1.7, rot: -4, icon: 'sun', caption: 'De vastes champs à perte de vue, parfaits pour les récoltes.' },
-  { id: 'plage', name: 'Plage enchantée', l1: 'PLAGE', l2: 'ENCHANTÉE', biome: 'plage', cx: 730, cy: 635, blob: 0, scale: 1.55, rot: 6, icon: 'wave', caption: 'Sable doré et vagues douces, avec quelques îlots au large.' },
-  { id: 'foret', name: 'Forêt du courage', l1: 'FORÊT DU', l2: 'COURAGE', biome: 'foret', cx: 700, cy: 400, blob: 2, scale: 1.5, rot: 10, icon: 'leaf', caption: 'Une canopée dense où rôdent ratons laveurs et brochets.' },
-  { id: 'bayou', name: 'Bayou de la confiance', l1: 'BAYOU DE LA', l2: 'CONFIANCE', biome: 'bayou', cx: 255, cy: 650, blob: 2, scale: 1.55, rot: -6, icon: 'leaf', caption: 'Eaux calmes et reflets verts, royaume des crocodiles.' },
-  { id: 'plateau', name: 'Plateau ensoleillé', l1: 'PLATEAU', l2: 'ENSOLEILLÉ', biome: 'plateau', cx: 290, cy: 410, blob: 0, scale: 1.45, rot: 0, icon: 'sun', caption: "Un plateau baigné de soleil, idéal pour les cultures d'été." },
-  { id: 'hauteurs', name: 'Hauteurs glacées', l1: 'HAUTEURS', l2: 'GLACÉES', biome: 'hauteurs', cx: 740, cy: 180, blob: 1, scale: 1.6, rot: 5, icon: 'snow', caption: 'Neiges éternelles et vents glacés sur les hauteurs.' },
-  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', cx: 250, cy: 200, blob: 2, scale: 1.55, rot: -8, icon: 'peak', caption: 'Un territoire oublié, à la lisière du mystère.' }
+  { id: 'esplanade', name: 'Esplanade', l1: 'ESPLANADE', l2: '', biome: 'esplanade', poly: [[400, 150], [580, 150], [580, 600], [400, 600]], cx: 490, cy: 330, icon: 'castle', caption: 'Le cœur de la vallée, là où bat la vie du village.' },
+  { id: 'prairie', name: 'Prairie tranquille', l1: 'PRAIRIE', l2: 'TRANQUILLE', biome: 'prairie', poly: [[400, 600], [580, 600], [580, 760], [400, 760]], cx: 490, cy: 680, icon: 'sun', caption: 'De vastes champs à perte de vue, parfaits pour les récoltes.' },
+  { id: 'plage', name: 'Plage enchantée', l1: 'PLAGE', l2: 'ENCHANTÉE', biome: 'plage', poly: [[580, 590], [740, 590], [740, 760], [580, 760]], cx: 660, cy: 675, icon: 'wave', caption: 'Sable doré et vagues douces, avec quelques îlots au large.' },
+  { id: 'foret', name: 'Forêt du courage', l1: 'FORÊT DU', l2: 'COURAGE', biome: 'foret', poly: [[580, 260], [740, 260], [740, 590], [580, 590]], cx: 660, cy: 425, icon: 'leaf', caption: 'Une canopée dense où rôdent ratons laveurs et brochets.' },
+  { id: 'bayou', name: 'Bayou de la confiance', l1: 'BAYOU DE LA', l2: 'CONFIANCE', biome: 'bayou', poly: [[90, 575], [400, 575], [400, 760], [90, 760]], cx: 245, cy: 667, icon: 'leaf', caption: 'Eaux calmes et reflets verts, royaume des crocodiles.' },
+  { id: 'plateau', name: 'Plateau ensoleillé', l1: 'PLATEAU', l2: 'ENSOLEILLÉ', biome: 'plateau', poly: [[90, 420], [400, 420], [400, 575], [90, 575]], cx: 245, cy: 497, icon: 'sun', caption: "Un plateau baigné de soleil, idéal pour les cultures d'été." },
+  { id: 'hauteurs', name: 'Hauteurs glacées', l1: 'HAUTEURS', l2: 'GLACÉES', biome: 'hauteurs', poly: [[740, 180], [900, 180], [900, 400], [740, 400]], cx: 820, cy: 290, icon: 'snow', caption: 'Neiges éternelles et vents glacés sur les hauteurs.' },
+  { id: 'terres', name: 'Terres oubliées', l1: 'TERRES', l2: 'OUBLIÉES', biome: 'terres', poly: [[90, 205], [400, 205], [400, 420], [90, 420]], cx: 245, cy: 312, icon: 'peak', caption: 'Un territoire oublié, à la lisière du mystère.' }
 ];
 const RIFT_ZONES = [
   { id: 'la-cour', name: 'La Cour', l1: 'LA COUR', l2: '', biome: 'port', cx: 660, cy: 165, blob: 3, scale: 1.3, rot: 0, icon: 'castle', caption: "Une cour de pierre ancienne, porte d'entrée du port." },
@@ -77,10 +81,10 @@ const RANCH_ZONES = [
 ];
 
 const MAPS = [
-  { id: 'base', label: 'Jeu de base', ext: null, zones: BASE_ZONES, river: 'M 480,60 C 460,160 500,220 460,300 C 420,380 320,380 300,460 C 280,540 320,560 300,640 C 285,700 260,740 240,780' },
-  { id: 'rift', label: 'A Rift in Time', ext: 'rift', zones: RIFT_ZONES, river: 'M 380,250 C 420,320 380,380 420,450 C 460,520 520,560 560,600 C 600,650 630,660 650,700' },
-  { id: 'vale', label: 'The Storybook Vale', ext: 'vale', zones: VALE_ZONES, river: 'M 330,350 C 300,420 260,480 270,560 C 275,620 300,660 320,700' },
-  { id: 'ranch', label: 'Wishblossom Ranch', ext: 'ranch', zones: RANCH_ZONES, river: 'M 680,220 C 600,280 520,340 470,420 C 420,480 340,500 280,540' }
+  { id: 'base', label: 'Jeu de base', ext: null, zones: BASE_ZONES, viewBox: '0 0 990 850', river: null },
+  { id: 'rift', label: 'A Rift in Time', ext: 'rift', zones: RIFT_ZONES, viewBox: '0 0 1000 800', river: 'M 380,250 C 420,320 380,380 420,450 C 460,520 520,560 560,600 C 600,650 630,660 650,700' },
+  { id: 'vale', label: 'The Storybook Vale', ext: 'vale', zones: VALE_ZONES, viewBox: '0 0 1000 800', river: 'M 330,350 C 300,420 260,480 270,560 C 275,620 300,660 320,700' },
+  { id: 'ranch', label: 'Wishblossom Ranch', ext: 'ranch', zones: RANCH_ZONES, viewBox: '0 0 1000 800', river: 'M 680,220 C 600,280 520,340 470,420 C 420,480 340,500 280,540' }
 ];
 
 const TYPE_LABEL = { culture: 'Culture', cueillette: 'Cueillette', gemme: 'Gemme' };
@@ -146,7 +150,7 @@ export function Carte() {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' }}>
         <div style={{ flex: '999 1 620px', minWidth: 0, background: 'var(--surface)', borderRadius: '24px', padding: '16px' }}>
-          <svg viewBox="0 0 1000 800" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '18px' }} role="img" aria-label={'Carte — ' + map.label}>
+          <svg viewBox={map.viewBox} style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '18px' }} role="img" aria-label={'Carte — ' + map.label}>
             <defs>
               <filter id="map-sketchy" x="-20%" y="-20%" width="140%" height="140%">
                 <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n" />
@@ -162,22 +166,51 @@ export function Carte() {
               </radialGradient>
             </defs>
 
-            <rect x="0" y="0" width="1000" height="800" fill="url(#map-ocean)" />
-            <path d={map.river} fill="none" stroke="var(--teal)" stroke-width="22" stroke-linecap="round" opacity="0.35" />
-            <path d={map.river} fill="none" stroke="var(--text)" stroke-width="7" stroke-linecap="round" opacity="0.3" />
+            <rect x="-1000" y="-1000" width="4000" height="4000" fill="url(#map-ocean)" />
+            {map.river && (
+              <>
+                <path d={map.river} fill="none" stroke="var(--teal)" stroke-width="22" stroke-linecap="round" opacity="0.35" />
+                <path d={map.river} fill="none" stroke="var(--text)" stroke-width="7" stroke-linecap="round" opacity="0.3" />
+              </>
+            )}
 
             {map.zones.map((zone) => {
               const isSel = zone.id === zoneId;
               const tile = TILE[zone.id];
+              const fillColor = BIOME[zone.biome]?.color || '#999';
+
+              // Jeu de base : vraie forme (rectangle réel du biome), emboîtée pile avec ses
+              // voisines, sans contour « dessiné main » — juste un liseré net entre les zones.
+              if (zone.poly) {
+                const pts = zone.poly.map((p) => p.join(',')).join(' ');
+                const xs = zone.poly.map((p) => p[0]), ys = zone.poly.map((p) => p[1]);
+                const bx = Math.min(...xs), by = Math.min(...ys);
+                const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by;
+                return (
+                  <g key={zone.id} onClick={() => setZoneId(zone.id)} style={{ cursor: 'pointer' }}>
+                    <polygon points={pts} fill={fillColor} />
+                    {tile && (
+                      <g clip-path={`url(#clip-${zone.id})`}>
+                        <clipPath id={`clip-${zone.id}`}><polygon points={pts} /></clipPath>
+                        <image href={`img/map/${tile}`} x={bx} y={by} width={bw} height={bh} preserveAspectRatio="xMidYMid slice" />
+                        <polygon points={pts} fill={fillColor} opacity="0.2" />
+                      </g>
+                    )}
+                    {isSel && <polygon points={pts} fill="none" stroke="var(--accent)" stroke-width="3" opacity="0.6" />}
+                    <polygon points={pts} fill="none" stroke={isSel ? '#FFE8A3' : 'var(--bg)'} stroke-width={isSel ? 4 : 2} />
+                  </g>
+                );
+              }
+
               return (
                 <g key={zone.id} transform={`translate(${zone.cx},${zone.cy}) rotate(${zone.rot}) scale(${zone.scale})`} onClick={() => setZoneId(zone.id)} style={{ cursor: 'pointer' }}>
                   {isSel && <path d={BLOBS[zone.blob]} fill="var(--accent)" opacity="0.5" filter="url(#map-glow)" transform="scale(1.22)" />}
-                  <path d={BLOBS[zone.blob]} fill={BIOME[zone.biome]?.color || '#999'} fill-opacity="0.88" filter="url(#map-sketchy)" />
+                  <path d={BLOBS[zone.blob]} fill={fillColor} fill-opacity="0.88" filter="url(#map-sketchy)" />
                   {tile && (
                     <g clip-path={`url(#clip-${zone.id})`}>
                       <clipPath id={`clip-${zone.id}`}><path d={BLOBS[zone.blob]} /></clipPath>
                       <image href={`img/map/${tile}`} x="-140" y="-140" width="280" height="280" preserveAspectRatio="xMidYMid slice" />
-                      <path d={BLOBS[zone.blob]} fill={BIOME[zone.biome]?.color || '#999'} opacity="0.3" />
+                      <path d={BLOBS[zone.blob]} fill={fillColor} opacity="0.3" />
                     </g>
                   )}
                   <path d={BLOBS[zone.blob]} fill="none" stroke={isSel ? '#FFE8A3' : 'var(--bg)'} stroke-width={isSel ? 9 : 7} stroke-dasharray="2 11" stroke-linecap="round" filter="url(#map-sketchy)" />
