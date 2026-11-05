@@ -1,9 +1,11 @@
 import { useState } from 'preact/hooks';
 import { useStore } from '../lib/store.js';
+import { useNow } from '../lib/router.js';
 import { BIOME } from '../data/biomes.js';
 import { CROPS, FISH, GEMS, FORAGE, GEM_COLORS, RIPPLES } from '../data/resources.js';
-import { SPECIES } from '../data/critters.js';
+import { VARIANTS } from '../data/critters.js';
 import { FLOWERS } from '../data/flowers.js';
+import { availabilityLabel } from '../lib/time.js';
 import { Icon, Thumb, Seg, ExtTag } from '../ui.jsx';
 
 // Décor des zones (formes "dessinées à la main") : purement visuel, aucune donnée de jeu.
@@ -102,11 +104,12 @@ const MAPS = [
 // Libellés de cueillette (fruits/épices/champis ; les fleurs ont leur propre section plus bas).
 const CAT_LABEL = { fruit: 'Fruit', epice: 'Épice', champi: 'Champignon' };
 
-// Ressources/pêche/animaux réels du biome associé à une zone — jamais dupliqués, juste
+// Ressources/gemmes/pêche/animaux réels du biome associé à une zone — jamais dupliqués, juste
 // filtrés depuis resources.js/critters.js (même source que Resources.jsx/Animals.jsx).
 // Chaque lien pré-remplit la recherche de l'écran visé (ResourceScreen lit déjà ?q=).
 // Champs enrichis (file/tag/prix) pour l'affichage en cartes façon Cueillette, au lieu
-// de simples lignes de texte.
+// de simples lignes de texte. Gemmes à part (section dédiée) : autre écran (Mines),
+// autre nature de ressource que cultures/cueillette.
 function zoneResources(biomeId) {
   const out = [];
   for (const c of CROPS) if (c.biomes.includes(biomeId)) {
@@ -118,6 +121,10 @@ function zoneResources(biomeId) {
       tag: CAT_LABEL[f.cat] || 'Cueillette', tagOutline: true, price: f.price > 0 ? f.price : null, priceLabel: 'pièces'
     });
   }
+  return out;
+}
+function zoneGems(biomeId) {
+  const out = [];
   for (const g of GEMS) if (g.biomes.includes(biomeId)) {
     const gc = GEM_COLORS[g.color];
     out.push({ name: g.name, file: g.file, href: '#/mines?q=' + encodeURIComponent(g.name), tag: gc?.label, tagColor: gc?.color, ring: gc?.color, price: g.price, priceLabel: 'pièces' });
@@ -146,20 +153,24 @@ function zoneFish(biomeId) {
     };
   });
 }
-// Animals.jsx recherche sur le nom de la VARIANTE (ex. "Singe doré"), pas sur le nom de
-// l'espèce au pluriel ("Singes") : ça ne matcherait aucune ligne. Le nom du biome, lui, est
-// inclus dans la recherche de chaque variante (BIOME[...].name) et désigne sans ambiguïté
-// tous les animaux de cette zone. Vignette = 1ère couleur de l'espèce, juste à titre représentatif.
-function zoneCritters(biomeId) {
-  const bio = BIOME[biomeId];
-  return SPECIES.filter((s) => s.biome === biomeId).map((s) => ({
-    name: s.name, file: s.variants[0]?.[2] ? s.variants[0][2] + '.png' : null,
-    href: '#/animaux?q=' + encodeURIComponent(bio?.name || s.name)
-  }));
+// Une carte par COULEUR (pas par espèce) avec son horaire d'apparition du moment (même
+// libellé/couleur que la ligne Animals.jsx — « Encore 18 min », « Revient demain 08:00 »…),
+// triées par espèce puis par couleur. Lien direct vers la fiche de cette variante précise.
+function zoneCritters(biomeId, now) {
+  return VARIANTS.filter((v) => v.species.biome === biomeId)
+    .slice()
+    .sort((a, b) => a.species.name.localeCompare(b.species.name, 'fr') || a.name.localeCompare(b.name, 'fr'))
+    .map((v) => {
+      const av = availabilityLabel(v.schedule, now);
+      return {
+        name: v.name, file: v.file + '.png', href: '#/animaux/' + v.id,
+        sideText: av.text, sideColor: av.urgent ? 'var(--warn)' : av.now ? 'var(--teal)' : 'var(--muted)'
+      };
+    });
 }
 
-// Carte d'élément façon Cueillette (vignette + nom + étiquette(s) + prix), réutilisée pour
-// les ressources, la pêche et les animaux d'une zone.
+// Carte d'élément façon Cueillette (vignette + nom + étiquette(s) + prix OU horaire),
+// réutilisée pour les ressources, gemmes, fleurs, la pêche et les animaux d'une zone.
 function ZoneItemCard({ it }) {
   return (
     <a href={it.href} class="item">
@@ -176,6 +187,11 @@ function ZoneItemCard({ it }) {
         <div class="side">
           <span class="big-num">{it.price}</span>
           <span class="small muted" style={{ fontWeight: 700 }}>{it.priceLabel}</span>
+        </div>
+      )}
+      {it.price == null && it.sideText && (
+        <div class="side">
+          <span class="small" style={{ fontWeight: 900, color: it.sideColor || 'var(--muted)' }}>{it.sideText}</span>
         </div>
       )}
     </a>
@@ -199,6 +215,7 @@ function ZoneSection({ title, items, empty }) {
 
 export function Carte() {
   const { state } = useStore();
+  const now = useNow();
   const availableMaps = MAPS.filter((m) => !m.ext || state.extensions[m.ext]);
   const [mapId, setMapId] = useState('base');
   const [zoneId, setZoneId] = useState(null);
@@ -209,9 +226,10 @@ export function Carte() {
   const selected = map.zones.find((z) => z.id === zoneId) || null;
   const bio = selected ? BIOME[selected.biome] : null;
   const resources = selected ? zoneResources(selected.biome) : [];
+  const gems = selected ? zoneGems(selected.biome) : [];
   const flowers = selected ? zoneFlowers(selected.biome) : [];
   const fish = selected ? zoneFish(selected.biome) : [];
-  const critters = selected ? zoneCritters(selected.biome) : [];
+  const critters = selected ? zoneCritters(selected.biome, now) : [];
 
   return (
     <div class="page wide">
@@ -316,6 +334,7 @@ export function Carte() {
           </div>
           <div style={{ padding: '4px 24px 24px' }}>
             <ZoneSection title="Ressources" items={resources} empty="Pas encore de ressource recensée ici." />
+            <ZoneSection title="Gemmes" items={gems} empty="Pas encore de gemme recensée ici." />
             <ZoneSection title="Fleurs" items={flowers} empty="Pas encore de fleur recensée ici." />
             <ZoneSection title="Pêche" items={fish} empty="Aucun poisson recensé dans cette zone." />
             <ZoneSection title="Animaux" items={critters} empty="Pas encore d'animal recensé ici." />
