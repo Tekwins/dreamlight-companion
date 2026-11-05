@@ -47,8 +47,11 @@ Interface et textes **en français**. Répondre à Tek en français.
     dans les .locbin) ou ne pointent que vers un sprite au nom générique/ambigu partagé par plusieurs objets
     différents (ex. « Color01 », « Rug », « MarketStall », « FurnitureBundle ») — volontairement laissés sans
     image plutôt que de risquer une image fausse.
-  - 54 images Voie des étoiles/cosmétiques : définitivement bloquées (CDN Fandom protégé par Cloudflare, pas de
-    nom anglais connu) — même méthode d'extraction locale potentiellement applicable si redemandé (pas tentée).
+  - Voie des étoiles (`starpath.js`) : 15/54 (10 récupérées le 2026-11-05 via extraction locale — 7 meubles,
+    3 compagnons/figurines). Les 39 restantes (vêtements, motifs, maquillage, cadres photo, revêtements) sont
+    bloquées différemment des meubles : ces bundles exportent leurs sprites sous des noms génériques de variante
+    de couleur (« color01 », « var03»…) sans aucun lien avec l'identité de l'objet — pas juste ambigu comme pour
+    les meubles, carrément introuvable par nom. Pas de piste automatisée restante, voir mémoire.
 - Historique des Voies des étoiles passées (27 voies, noms EN uniquement, pas de catégorie wiki FR) : Tek a décliné
   ce scraping une première fois — ne relancer que s'il le redemande explicitement.
 - **Récompenses d'amitié** : 83/689 encore marquées « nom à vérifier en jeu » dans `Friends.jsx` (147 avant le
