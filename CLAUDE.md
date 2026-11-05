@@ -37,12 +37,14 @@ Interface et textes **en français**. Répondre à Tek en français.
   déploiement (clés VAPID, `supabase functions deploy`, planification cron) doit se faire depuis le compte Supabase
   de Tek — étapes dans `supabase/functions/daily-reminders/README.md`.
 - **Images manquantes**, toutes avec repli sur l'initiale (composant `Thumb`), pas bloquant :
-  - Habitants et souvenirs : 100 % récupérées.
-  - Meubles (`furniture.js`) : ~365/1304 (28 %) — mydreamlightvalley.com n'a pas de page pour la plupart des
-    variantes (couleur/style). Matching déjà optimisé (voir `fetchFurnitureFromMdv()` dans `scrape-wiki.mjs` :
-    décodage d'entités HTML + repli par jeu de tokens triés) ; pas de piste automatisée supplémentaire connue.
-  - 12 images de recettes et 54 images Voie des étoiles/cosmétiques : définitivement bloquées (wiki EN épuisé,
-    CDN Fandom protégé par Cloudflare) — ne pas retenter, voir les commentaires de `scripts/scrape-wiki.mjs`.
+  - Habitants, souvenirs et recettes : 100 % récupérées (les 12 dernières recettes trouvées le 2026-11-05, par
+    nom traduit + ingrédients vérifiés sur le wiki anglais plutôt que par stats seules — voir `fetchImagesFromMdv()`
+    et le commentaire d'en-tête de `scrape-wiki.mjs`).
+  - Meubles (`furniture.js`) : ~365/1304 (28 %) — confirmé définitivement bloqué le 2026-11-05 (cache
+    mydreamlightvalley.com reconstruit à neuf, aucun gain). Technique manuelle possible pour Tek : voir
+    mémoire `project-data-pipeline-state` (Spécial:FilePath + navigateur réel, pas pour notre pipeline).
+  - 54 images Voie des étoiles/cosmétiques : définitivement bloquées (CDN Fandom protégé par Cloudflare, pas de
+    nom anglais connu) — ne pas retenter sans nouvelle piste.
 - Historique des Voies des étoiles passées (27 voies, noms EN uniquement, pas de catégorie wiki FR) : Tek a décliné
   ce scraping une première fois — ne relancer que s'il le redemande explicitement.
 - **Récompenses d'amitié** : 147/689 proviennent de mydreamlightvalley.com ou du wiki anglais (pas du wiki FR),
