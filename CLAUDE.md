@@ -51,8 +51,12 @@ Interface et textes **en français**. Répondre à Tek en français.
     nom anglais connu) — même méthode d'extraction locale potentiellement applicable si redemandé (pas tentée).
 - Historique des Voies des étoiles passées (27 voies, noms EN uniquement, pas de catégorie wiki FR) : Tek a décliné
   ce scraping une première fois — ne relancer que s'il le redemande explicitement.
-- **Récompenses d'amitié** : 147/689 proviennent de mydreamlightvalley.com ou du wiki anglais (pas du wiki FR),
-  marquées « nom à vérifier en jeu » dans `Friends.jsx`. Pas un bug, juste pas confirmé par la source officielle.
+- **Récompenses d'amitié** : 83/689 encore marquées « nom à vérifier en jeu » dans `Friends.jsx` (147 avant le
+  2026-11-05 — 64 vérifiées/traduites depuis la localisation officielle du jeu, `npm run data -- locdb` puis
+  `npm run build-data`, voir mémoire). Les 83 restants n'ont pas de texte officiel trouvé dans les .locbin —
+  25 ont pour seul nom « Design Motif » (texte générique de mydreamlightvalley.com lui-même, pas un nom d'objet
+  à chercher), les autres (motifs nommés, vêtements, meubles) n'ont simplement pas de correspondance dans les
+  fichiers de localisation ouverts jusqu'ici. Pas un bug, juste pas confirmé.
 - **Bonus de rôle des habitants** : calculé (`roleBonus()` dans `Friends.jsx`), formule communautaire du wiki
   anglais (dreamlightvalleywiki.com/Bonuses, non confirmée par Gameloft) : base (20 % Jardinage, 25 % les autres
   rôles) + 3,5 %/niveau du compagnon actif + 1 %/niveau de chaque autre habitant sur le même rôle.
