@@ -1,0 +1,12 @@
+<!--
+  Modèle d'e-mail « Magic Link » à coller dans Supabase :
+  Dashboard → Authentication → Emails → Templates → Magic Link (Sujet : « Ton code de connexion Dreamlight »).
+  {{ .Token }} = le code tapé dans l'appli (obligatoire pour l'appli installée sur iPhone).
+  {{ .ConfirmationURL }} = le lien, qui ne connecte que le navigateur où il s'ouvre.
+-->
+<h2>Connexion à Dreamlight Compagnon</h2>
+<p>Ton code de connexion :</p>
+<p style="font-size:32px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>
+<p>Tape-le dans l'appli (Réglages → Compte). Il expire au bout d'une heure.</p>
+<p>Sur un ordinateur, tu peux aussi <a href="{{ .ConfirmationURL }}">toucher ce lien</a>.</p>
+<p style="color:#888;font-size:12px">Si tu n'as rien demandé, ignore cet e-mail.</p>

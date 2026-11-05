@@ -9,6 +9,9 @@ Interface et textes **en français**. Répondre à Tek en français.
 - Déploiement : `.github/workflows/deploy.yml`, à chaque push sur `main` → https://tekwins.github.io/dreamlight-companion/
 - Supabase (projet `idmeekuelqbomisvnosn`) : connexion par lien magique (PKCE), table `user_state`
   (une ligne jsonb par compte, RLS : chaque compte ne voit que sa ligne). Schéma : `supabase/schema.sql`.
+  Connexion par **code à 6 chiffres** (`verifyOtp`) en plus du lien : sur iOS, l'appli installée sur l'écran d'accueil
+  ne partage pas le stockage de Safari, donc le lien seul ne la connecte pas. Le modèle d'e-mail « Magic Link » de
+  Supabase doit contenir `{{ .Token }}` (modèle prêt : `supabase/email-magic-link.html`, à coller dans le dashboard).
   La clé anon dans `src/lib/supabase.js` est publique par conception ; ne jamais committer la clé service_role.
 
 ## Organisation

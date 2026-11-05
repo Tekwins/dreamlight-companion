@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { useStore, signOut, exportState, importState, pull } from '../lib/store.js';
-import { sendMagicLink, authErrorMessage } from '../lib/supabase.js';
+import { sendMagicLink, verifyEmailCode, authErrorMessage } from '../lib/supabase.js';
 import { enablePush, disablePush, pushDeviceStatus, pushSupported } from '../lib/push.js';
 import { EXTENSIONS } from '../data/biomes.js';
 import { VARIANT } from '../data/critters.js';
@@ -203,31 +203,53 @@ function WatchedAnimals() {
 
 function Login() {
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [state, setState] = useState('idle');
   const [err, setErr] = useState('');
   const submit = async (e) => {
     e.preventDefault();
+    setErr('');
     setState('sending');
     const { error } = await sendMagicLink(email.trim());
-    if (error) { setErr(authErrorMessage(error)); setState('idle'); } else setState('sent');
+    if (error) { setErr(authErrorMessage(error)); setState('idle'); } else { setCode(''); setState('sent'); }
   };
-  if (state === 'sent') {
+  // La session est captée par onAuthStateChange (store.js) : l'écran bascule tout seul une fois connecté.
+  const verify = async (e) => {
+    e.preventDefault();
+    setErr('');
+    setState('verifying');
+    const { error } = await verifyEmailCode(email.trim(), code);
+    if (error) { setErr(authErrorMessage(error)); setState('sent'); }
+  };
+  if (state === 'sent' || state === 'verifying') {
     return (
-      <div class="card stack">
-        <strong>Lien envoyé à {email}</strong>
-        <span class="muted" style={{ lineHeight: 1.45 }}>Ouvre l'e-mail sur cet appareil et touche le lien : tu seras connecté ici. Pense à regarder les indésirables.</span>
-        <button class="btn ghost" onClick={() => setState('idle')}>Utiliser une autre adresse</button>
-      </div>
+      <form class="card stack" onSubmit={verify}>
+        <strong>E-mail envoyé à {email}</strong>
+        <span class="muted" style={{ lineHeight: 1.45 }}>
+          Tape ici le code reçu dans l'e-mail. Tu peux aussi toucher le lien, mais il ne connecte que le navigateur
+          (pas l'appli installée sur l'écran d'accueil d'un iPhone). Pense à regarder les indésirables.
+        </span>
+        <label class="field">Code reçu par e-mail
+          <input
+            type="text" inputMode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxLength={10} required
+            value={code} onInput={(e) => setCode(e.currentTarget.value.replace(/\D/g, ''))}
+            style={{ letterSpacing: '0.3em', fontSize: 22, textAlign: 'center' }}
+          />
+        </label>
+        {err && <span class="small" style={{ color: 'var(--warn)', fontWeight: 800 }}>{err}</span>}
+        <button class="btn" type="submit" disabled={state === 'verifying' || code.length < 6}>{state === 'verifying' ? 'Vérification…' : 'Se connecter'}</button>
+        <button type="button" class="btn ghost" onClick={() => { setErr(''); setState('idle'); }}>Renvoyer un code ou changer d'adresse</button>
+      </form>
     );
   }
   return (
     <form class="card stack" onSubmit={submit}>
-      <span class="muted" style={{ lineHeight: 1.45 }}>Connecte-toi pour retrouver ta progression sur ton téléphone et ton ordinateur. Pas de mot de passe : tu reçois un lien par e-mail.</span>
+      <span class="muted" style={{ lineHeight: 1.45 }}>Connecte-toi pour retrouver ta progression sur ton téléphone et ton ordinateur. Pas de mot de passe : tu reçois un code par e-mail.</span>
       <label class="field">Adresse e-mail
         <input type="email" required autocomplete="email" value={email} onInput={(e) => setEmail(e.currentTarget.value)} />
       </label>
       {err && <span class="small" style={{ color: 'var(--warn)', fontWeight: 800 }}>{err}</span>}
-      <button class="btn" type="submit" disabled={state === 'sending'}>{state === 'sending' ? 'Envoi…' : 'Recevoir le lien de connexion'}</button>
+      <button class="btn" type="submit" disabled={state === 'sending'}>{state === 'sending' ? 'Envoi…' : 'Recevoir le code de connexion'}</button>
     </form>
   );
 }
