@@ -28,7 +28,9 @@ const PATHS = {
   sync: <><path d="M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3" /><path d="M4 4v4h4M20 20v-4h-4" /></>,
   shovel: <><path d="M17 3l4 4-9 9-4-4z" /><path d="M8 16l-4 4-2-2 4-4" /><path d="M14 6l3 3" /></>,
   // Ajout de l'icône "clock" : pour le rôle Table de courbage temporel
-  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></>
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></>,
+  // Ajout de l'icône "map" : pour la Carte interactive de la vallée
+  map: <><path d="M9 3L3 5v16l6-2 6 2 6-2V3l-6 2-6-2z" /><path d="M9 3v16M15 5v16" /></>
 };
 
 export function Icon({ name, size = 22, fill = 'none', ...rest }) {

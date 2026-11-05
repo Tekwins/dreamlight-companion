@@ -6,6 +6,7 @@ import { Icon } from './ui.jsx';
 import { Home } from './screens/Home.jsx';
 import { Animals } from './screens/Animals.jsx';
 import { Valley } from './screens/Valley.jsx';
+import { Carte } from './screens/Carte.jsx';
 import { ResourceScreen } from './screens/Resources.jsx';
 import { Recipes } from './screens/Recipes.jsx';
 import { Pantry } from './screens/Pantry.jsx';
@@ -20,21 +21,22 @@ const TABS = [
   { href: '#/', label: 'Aujourd’hui', icon: 'home', match: (p) => p === '/' },
   { href: '#/guide', label: 'Guide', icon: 'book', match: (p) => p.startsWith('/guide') },
   { href: '#/recettes', label: 'Recettes', icon: 'pot', match: (p) => /^\/(recettes|garde-manger|courses)/.test(p) },
-  { href: '#/vallee', label: 'Vallée', icon: 'leaf', match: (p) => /^\/(vallee|animaux|potager|peche|cueillette|mines)/.test(p) },
+  { href: '#/vallee', label: 'Vallée', icon: 'leaf', match: (p) => /^\/(vallee|animaux|potager|peche|cueillette|mines|carte)/.test(p) },
   { href: '#/amitie', label: 'Amitié', icon: 'heart', match: (p) => p.startsWith('/amitie') }
 ];
 
 const SUB = {
   '#/recettes': [['#/garde-manger', 'Garde-manger'], ['#/courses', 'Liste de courses']],
-  '#/vallee': [['#/animaux', 'Animaux'], ['#/potager', 'Potager'], ['#/peche', 'Pêche'], ['#/cueillette', 'Cueillette'], ['#/mines', 'Mines']]
+  '#/vallee': [['#/animaux', 'Animaux'], ['#/potager', 'Potager'], ['#/peche', 'Pêche'], ['#/cueillette', 'Cueillette'], ['#/mines', 'Mines'], ['#/carte', 'Carte']]
 };
 
 function screenFor(route) {
   const [first, second] = route.parts;
   switch (first) {
     case undefined: return <Home />;
-    case 'animaux': return <Animals selectedId={second} />;
+    case 'animaux': return <Animals selectedId={second} initialQ={route.query.get('q') || ''} />;
     case 'vallee': return <Valley />;
+    case 'carte': return <Carte />;
     // key={first} : force un remontage en changeant d'écran, pour réinitialiser le tri
     // (sinon un ID de tri invalide pour le nouvel écran, ex. "profit" venant du Potager, fait planter la page)
     case 'potager': case 'peche': case 'cueillette': case 'mines': return <ResourceScreen key={first} kind={first} initialQ={route.query.get('q') || ''} />;

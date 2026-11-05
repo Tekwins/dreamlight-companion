@@ -14,6 +14,7 @@ export function Valley() {
   const shopping = state.shopping.filter((s) => !s.done).length;
 
   const tiles = [
+    ['#/carte', 'Carte', 'Zones, ressources et animaux', 'map', '#F0D27A'],
     ['#/animaux', 'Animaux', `${nowCount} présents maintenant`, 'paw', '#6FD6C2'],
     ['#/potager', 'Potager', `${state.plantings.length} plantation(s) en cours`, 'sprout', '#9BD77A'],
     ['#/peche', 'Pêche', 'Par biome et remous', 'fish', '#7DB4F5'],

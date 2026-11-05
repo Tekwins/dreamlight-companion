@@ -23,6 +23,12 @@ Interface et textes **en français**. Répondre à Tek en français.
   Toute nouvelle donnée perso va dans `DEFAULT_STATE`.
 - `src/lib/time.js` : disponibilité des animaux (heure locale de l'appareil, comme le jeu).
 - `src/screens/` : un fichier par écran. `src/ui.jsx` : composants partagés (Icon, Thumb, BiomePill, Seg, Switch…).
+  `Carte.jsx` (écran `#/carte`) : carte interactive, conçue dans une session Claude Design séparée (artifact
+  `PXoWydsbHUosmc2fEL6f2B`) puis intégrée ici. Le jeu de base reprend les 8 vrais biomes ; les zones des 3
+  extensions (ex. « L'Oasis », « La Cour ») sont des lieux plus précis que nos biomes actuels, pas encore une
+  donnée de jeu confirmée — gardées en local dans `Carte.jsx` (tableaux `RIFT_ZONES`/`VALE_ZONES`/`RANCH_ZONES`),
+  rattachées au biome réel le plus proche pour les ressources/pêche/animaux, disposition plausible mais pas
+  géographiquement garantie (aucune carte officielle assemblée trouvée pour les extensions, voir mémoire).
 - `src/styles.css` : variables de thème `[data-theme='nuit']` et `[data-theme='chateau']`. Utiliser les variables, pas de couleurs en dur.
 - Mise en page : barre du bas sous 960 px, menu latéral + liste/fiche côte à côte au-dessus.
 

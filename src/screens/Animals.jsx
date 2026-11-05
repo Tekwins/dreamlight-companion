@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { useStore } from '../lib/store.js';
 import { useNow, useDesktop } from '../lib/router.js';
 import { crittersNow, sortCritters, feedInfo } from '../lib/game.js';
@@ -14,15 +14,18 @@ const byName = (a, b) => a.v.name.localeCompare(b.v.name, 'fr');
 const FOOD_FILE = {};
 for (const it of [...CROPS, ...FISH, ...FORAGE]) FOOD_FILE[it.name] = it.file;
 
-export function Animals({ selectedId }) {
+export function Animals({ selectedId, initialQ }) {
   const { state } = useStore();
   const desktop = useDesktop();
   const now = useNow();
   const [filter, setFilter] = useState('now');
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState(initialQ || '');
   const [hideTamed, setHideTamed] = useState(false);
   const [group, setGroup] = useState('rare');
   const [subBiome, setSubBiome] = useState(false);
+  // Arrivée depuis la carte ou la Recherche globale avec un terme différent : on le reprend,
+  // et on repasse sur "Tous" (sinon un animal pas actif maintenant disparaîtrait de la liste).
+  useEffect(() => { if (initialQ) { setQ(initialQ); setFilter('all'); } }, [initialQ]);
 
   const selected = selectedId ? VARIANT[selectedId] : null;
   if (selected && !desktop) return <div class="page"><AnimalDetail v={selected} /></div>;
