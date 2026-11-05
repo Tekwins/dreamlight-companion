@@ -19,8 +19,12 @@ Interface et textes **en français**. Répondre à Tek en français.
 - `src/data/` : données du jeu (biomes, animaux + horaires, cultures, poissons, gemmes, cueillette, recettes, habitants,
   succès, Voie des étoiles, quêtes, meubles, souvenirs). La plupart sont générées par `scripts/build-data.mjs` depuis
   `data/raw/` (pages du wiki récupérées par `scripts/scrape-wiki.mjs`, voir ses commentaires d'en-tête pour les modes :
-  tout, `images`, `quetes`, `collection`) ; `resources.js` et `critters.js` restent à la main.
+  tout, `images`, `quetes`, `collection`) ; `resources.js`, `critters.js` et `materials.js` restent à la main.
   Biomes référencés par identifiant (`BIOMES` dans `biomes.js`) ; chaque biome porte son extension (`rift`, `vale`, `ranch`).
+  `materials.js` (bois/minerais-pierres/matériaux de fouille/algues, jeu de base + 3 extensions) : biome exact tiré de
+  la section Resources de chaque page de biome sur dreamlightvalleywiki.com (wiki anglais — le wiki FR n'a pas ces
+  pages), nom FR et prix tirés de mydreamlightvalley.com/fr/material/foraging. Volontairement exclus : objets
+  d'événements saisonniers, de fouille « épave » (Os, Arme brisée…) et liés au Rêve (Éclat de rêve/nocturne/pixels).
   `furniture.js` : les 23 vraies catégories du jeu (pas une simplification), un meuble peut en avoir plusieurs.
   `memories.js` : souvenirs groupés par univers Disney/Pixar, numérotés (pas de nom individuel dans le jeu).
 - `src/lib/store.js` : progression personnelle (localStorage par compte + synchro Supabase, la version la plus récente gagne).
