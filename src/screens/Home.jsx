@@ -16,9 +16,10 @@ export function Home() {
   const today = todayKey(now);
 
   const critters = sortCritters(crittersNow(exts, now).filter((c) => c.now));
-  const notTamed = critters.filter((c) => !state.tamed[c.v.id]);
   const rare = critters.filter((c) => c.rare && !state.tamed[c.v.id]);
-  const featured = (notTamed.length ? notTamed : critters).slice(0, 8);
+  // Tous les animaux disponibles maintenant (pas seulement les 8 premiers non apprivoisés) :
+  // Tek veut voir l'ensemble d'un coup d'œil, la rangée défile horizontalement si besoin.
+  const featured = critters;
 
   const plantings = state.plantings.map((p) => {
     const crop = CROP[p.cropId];
